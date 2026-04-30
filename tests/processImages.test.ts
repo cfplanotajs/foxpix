@@ -170,4 +170,53 @@ describe('processImages integration', () => {
     expect(summary.savedBytes).toBe(summary.originalBytes - summary.outputBytes);
   });
 
+
+  it('auto-orients EXIF-rotated jpeg before webp output', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-orient-'));
+    const inputFile = path.join(dir, 'phone.jpg');
+    const outputDir = path.join(dir, 'optimized');
+    const outputFile = path.join(outputDir, 'phone-001.webp');
+
+    await sharp({
+      create: {
+        width: 40,
+        height: 20,
+        channels: 3,
+        background: { r: 50, g: 90, b: 140 }
+      }
+    })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toFile(inputFile);
+
+    const discovered: DiscoveredFile = {
+      absolutePath: inputFile,
+      relativePath: 'phone.jpg',
+      name: 'phone',
+      extension: '.jpg',
+      folderName: 'input'
+    };
+
+    const plan: RenamePlanItem[] = [{ source: discovered, outputFilename: 'phone-001.webp', outputPath: outputFile }];
+    const options: CliOptions = {
+      input: dir,
+      output: outputDir,
+      prefix: 'phone',
+      pattern: '{prefix}-{index}',
+      quality: 85,
+      alphaQuality: 100,
+      lossless: false,
+      recursive: false,
+      dryRun: false,
+      keepMetadata: false
+    };
+
+    const summary = await processImages(plan, options);
+    expect(summary.files[0].status).toBe('success');
+
+    const outputMeta = await sharp(outputFile).metadata();
+    expect(outputMeta.width).toBe(20);
+    expect(outputMeta.height).toBe(40);
+  });
+
 });

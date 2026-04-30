@@ -8,8 +8,7 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
   const files: ProcessedFileResult[] = [];
   for (const item of plan) {
     try {
-      const image = sharp(item.source.absolutePath, { failOn: 'none' });
-      let pipeline = image;
+      let pipeline = sharp(item.source.absolutePath, { failOn: 'none' }).rotate();
       if (options.maxWidth || options.maxHeight) {
         pipeline = pipeline.resize({
           width: options.maxWidth,
