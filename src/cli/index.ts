@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command, CommanderError } from 'commander';
 import path from 'node:path';
+import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { access, readFile, stat } from 'node:fs/promises';
 import { discoverFiles } from '../core/fileDiscovery.js';
@@ -185,16 +186,28 @@ export async function main(): Promise<void> {
   process.exitCode = await runCli(process.argv.slice(2));
 }
 
-const isDirectRun = (() => {
+function safeRealpath(filePath: string): string {
+  try {
+    return realpathSync.native(filePath);
+  } catch {
+    try {
+      return realpathSync(filePath);
+    } catch {
+      return path.resolve(filePath);
+    }
+  }
+}
+
+function isDirectRun(): boolean {
   if (!process.argv[1]) {
     return false;
   }
 
-  const invoked = path.resolve(process.argv[1]);
-  const currentFile = path.resolve(fileURLToPath(import.meta.url));
+  const invoked = safeRealpath(process.argv[1]);
+  const currentFile = safeRealpath(fileURLToPath(import.meta.url));
   return invoked === currentFile;
-})();
+}
 
-if (isDirectRun) {
+if (isDirectRun()) {
   void main();
 }
