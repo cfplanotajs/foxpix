@@ -139,3 +139,38 @@ npm run build
 - **No files found**: ensure supported extensions are present.
 - **Unexpected names**: validate `--pattern` tokens and `--prefix/--custom` values.
 - **Large files after conversion**: try lower quality or enable resizing.
+
+
+## GUI (Electron + React) MVP
+
+The GUI is a local shell over the existing core pipeline. Processing stays in Electron's main process and the renderer uses a narrow preload/IPC bridge (`window.foxpix.*`).
+
+### GUI development
+
+```bash
+npm run dev:gui
+```
+
+### GUI build
+
+```bash
+npm run build:gui
+```
+
+### GUI start (after build)
+
+```bash
+npm run start:gui
+```
+
+### GUI workflow
+
+1. Select input folder.
+2. Select output folder (or use default `<input>/optimized`).
+3. Set prefix/pattern and compression settings.
+4. Click **Preview (dry run)** to review planned output names.
+5. Click **Process** to run conversion and write manifest.
+6. Review summary and failed-file messages, then open output folder.
+
+Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or remote processing.
+

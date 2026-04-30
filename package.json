@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "optimize": "tsx src/cli/index.ts",
-    "create-samples": "tsx scripts/create-sample-images.ts"
+    "create-samples": "tsx scripts/create-sample-images.ts",
+    "dev:gui": "vite",
+    "build:gui": "vite build && tsc -p tsconfig.electron.json",
+    "start:gui": "electron dist-electron/main.js"
   },
   "bin": {
     "foxpix": "dist/cli/index.js"
@@ -19,12 +22,19 @@
   },
   "dependencies": {
     "commander": "^12.1.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
+    "vite": "^6.0.1",
     "vitest": "^3.2.4"
   }
 }
