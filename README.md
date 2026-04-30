@@ -30,6 +30,8 @@ npm run test
 
 ```bash
 npm run optimize -- --input ./input [options]
+npm run optimize -- --help
+npm run optimize -- --version
 ```
 
 Options:
@@ -111,6 +113,12 @@ npm run test
 npm run build
 ```
 
+
+
+## Development security notes
+
+- Dev dependencies are pinned to a current Vitest line (`^3.2.4`) to pull a newer Vite/esbuild chain and reduce audit risk in the test toolchain.
+- Avoid running `npm audit fix --force` blindly; prefer intentional upgrades and verify with `npm audit` and tests.
 
 ## Exit codes (automation)
 

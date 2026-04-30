@@ -17,6 +17,24 @@ async function createValidPng(filePath: string): Promise<void> {
 }
 
 describe('CLI exit codes', () => {
+  it('returns zero for --help', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await expect(runCli(['node', 'foxpix', '--help'])).resolves.toBe(0);
+    outSpy.mockRestore();
+    logSpy.mockRestore();
+  });
+
+  it('returns zero for --version', async () => {
+    const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    await expect(runCli(['node', 'foxpix', '--version'])).resolves.toBe(0);
+    outSpy.mockRestore();
+  });
+
+  it('returns non-zero for invalid input path', async () => {
+    await expect(runCli(['--input', '/definitely/not/a/real/path'])).rejects.toThrow();
+  });
+
   it('returns non-zero when at least one file fails', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'foxpix-cli-fail-'));
     const input = path.join(root, 'input');
@@ -26,14 +44,12 @@ describe('CLI exit codes', () => {
     await writeFile(path.join(input, 'bad.png'), 'not-a-real-image', 'utf8');
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const code = await runCli(['--input', input, '--prefix', 'test']);
 
     expect(code).toBe(1);
 
     logSpy.mockRestore();
-    errSpy.mockRestore();
   });
 
   it('returns zero when all files succeed', async () => {
@@ -43,14 +59,12 @@ describe('CLI exit codes', () => {
     await createValidPng(path.join(input, 'good.png'));
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const code = await runCli(['--input', input, '--prefix', 'test']);
 
     expect(code).toBe(0);
 
     logSpy.mockRestore();
-    errSpy.mockRestore();
   });
 
   it('returns zero for successful dry run', async () => {
@@ -60,13 +74,11 @@ describe('CLI exit codes', () => {
     await createValidPng(path.join(input, 'good.png'));
 
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const code = await runCli(['--input', input, '--prefix', 'test', '--dryRun']);
 
     expect(code).toBe(0);
 
     logSpy.mockRestore();
-    errSpy.mockRestore();
   });
 });
