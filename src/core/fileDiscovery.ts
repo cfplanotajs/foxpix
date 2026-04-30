@@ -23,13 +23,14 @@ function isSameOrSubPath(parent: string, target: string): boolean {
 export async function discoverFiles(options: DiscoverOptions): Promise<DiscoveredFile[]> {
   const inputFolder = path.resolve(options.inputFolder);
   const outputFolder = options.outputFolder ? path.resolve(options.outputFolder) : undefined;
+  const shouldExcludeOutputFolder = outputFolder ? isSameOrSubPath(inputFolder, outputFolder) : false;
   const files: DiscoveredFile[] = [];
 
   async function walk(currentDir: string): Promise<void> {
     const entries = await readdir(currentDir, { withFileTypes: true });
     for (const entry of entries) {
       const absolutePath = path.join(currentDir, entry.name);
-      if (outputFolder && isSameOrSubPath(outputFolder, absolutePath)) {
+      if (outputFolder && shouldExcludeOutputFolder && isSameOrSubPath(outputFolder, absolutePath)) {
         continue;
       }
 

@@ -20,8 +20,13 @@ const defaults: GuiOptions = {
   keepMetadata: false
 };
 
+function toMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export default function App(): JSX.Element {
   const [options, setOptions] = useState<GuiOptions>(defaults);
+  const [outputTouched, setOutputTouched] = useState(false);
   const [previewRows, setPreviewRows] = useState<PreviewRow[]>([]);
   const [summary, setSummary] = useState<ProcessingSummary | null>(null);
   const [manifestPath, setManifestPath] = useState('');
@@ -36,8 +41,12 @@ export default function App(): JSX.Element {
 
   const pickInput = async (): Promise<void> => {
     const picked = await window.foxpix.selectInputFolder();
-    if (picked) {
-      setOptions((prev) => ({ ...prev, input: picked, output: prev.output || `${picked}/optimized` }));
+    if (!picked) return;
+
+    if (outputTouched) {
+      setOptions((prev) => ({ ...prev, input: picked }));
+    } else {
+      setOptions((prev) => ({ ...prev, input: picked, output: `${picked}/optimized` }));
     }
   };
 
@@ -45,26 +54,37 @@ export default function App(): JSX.Element {
     const picked = await window.foxpix.selectOutputFolder();
     if (picked) {
       setOptions((prev) => ({ ...prev, output: picked }));
+      setOutputTouched(true);
     }
   };
 
   const handlePreview = async (): Promise<void> => {
     setBusy(true);
     setStatus('Preparing preview...');
-    const result = await window.foxpix.preview({ ...options, output: options.output || undefined });
-    setPreviewRows(result.rows);
-    setStatus(`Preview ready (${result.total} files).`);
-    setBusy(false);
+    try {
+      const result = await window.foxpix.preview({ ...options, output: options.output || undefined });
+      setPreviewRows(result.rows);
+      setStatus(`Preview ready (${result.total} files).`);
+    } catch (error) {
+      setStatus(`Preview failed: ${toMessage(error)}`);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleProcess = async (): Promise<void> => {
     setBusy(true);
     setStatus('Processing batch...');
-    const result = await window.foxpix.process({ ...options, output: options.output || undefined });
-    setSummary(result.summary);
-    setManifestPath(result.manifestPath);
-    setStatus(`Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`);
-    setBusy(false);
+    try {
+      const result = await window.foxpix.process({ ...options, output: options.output || undefined });
+      setSummary(result.summary);
+      setManifestPath(result.manifestPath);
+      setStatus(`Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`);
+    } catch (error) {
+      setStatus(`Processing failed: ${toMessage(error)}`);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

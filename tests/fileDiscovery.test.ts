@@ -33,4 +33,24 @@ describe('file discovery output-folder exclusion', () => {
     expect(files).not.toContain(path.join('optimized', 'skip.png'));
     expect(files).toContain(path.join('optimized-old', 'keep.png'));
   });
+
+  it('does not exclude input files when output folder is an ancestor of input', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'foxpix-discovery-ancestor-'));
+    const outputDir = path.join(root, 'images');
+    const inputDir = path.join(outputDir, 'raw');
+    await mkdir(inputDir, { recursive: true });
+
+    await sharp({ create: { width: 20, height: 10, channels: 3, background: { r: 10, g: 90, b: 140 } } })
+      .jpeg()
+      .toFile(path.join(inputDir, 'photo.jpg'));
+
+    const discovered = await discoverFiles({
+      inputFolder: inputDir,
+      outputFolder: outputDir,
+      recursive: true
+    });
+
+    expect(discovered.length).toBe(1);
+    expect(discovered[0].relativePath).toBe('photo.jpg');
+  });
 });
