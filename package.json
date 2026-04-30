@@ -12,7 +12,7 @@
     "create-samples": "tsx scripts/create-sample-images.ts",
     "dev:gui": "vite",
     "build:gui": "vite build && tsc -p tsconfig.electron.json",
-    "start:gui": "electron dist-electron/main.js"
+    "start:gui": "electron dist-electron/electron/main.js"
   },
   "bin": {
     "foxpix": "dist/cli/index.js"

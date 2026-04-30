@@ -115,4 +115,28 @@ describe('CLI exit codes', () => {
     errSpy.mockRestore();
   });
 
+
+  it('returns non-zero for invalid quality', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const code = await runCli(['--quality', 'abc', '--input', '/tmp']);
+    expect(code).not.toBe(0);
+    errSpy.mockRestore();
+  });
+
+  it('returns non-zero for invalid alphaQuality', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const code = await runCli(['--alphaQuality', '101', '--input', '/tmp']);
+    expect(code).not.toBe(0);
+    errSpy.mockRestore();
+  });
+
+  it('returns non-zero for invalid maxWidth and maxHeight', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const widthCode = await runCli(['--maxWidth', '0', '--input', '/tmp']);
+    const heightCode = await runCli(['--maxHeight', '-5', '--input', '/tmp']);
+    expect(widthCode).not.toBe(0);
+    expect(heightCode).not.toBe(0);
+    errSpy.mockRestore();
+  });
+
 });

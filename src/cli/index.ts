@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Command, CommanderError } from 'commander';
+import { Command, CommanderError, InvalidArgumentError } from 'commander';
 import path from 'node:path';
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -63,6 +63,31 @@ function isSamePath(a: string, b: string): boolean {
 }
 
 
+
+function parseIntegerOption(value: string, optionName: string): number {
+  const num = Number(value);
+  if (!Number.isInteger(num)) {
+    throw new InvalidArgumentError(`${optionName} must be an integer.`);
+  }
+  return num;
+}
+
+function parseRangeOption(value: string, optionName: string, min: number, max: number): number {
+  const num = parseIntegerOption(value, optionName);
+  if (num < min || num > max) {
+    throw new InvalidArgumentError(`${optionName} must be between ${min} and ${max}.`);
+  }
+  return num;
+}
+
+function parsePositiveIntegerOption(value: string, optionName: string): number {
+  const num = parseIntegerOption(value, optionName);
+  if (num <= 0) {
+    throw new InvalidArgumentError(`${optionName} must be greater than 0.`);
+  }
+  return num;
+}
+
 export async function runCli(argv: string[]): Promise<number> {
   try {
     const version = await getCliVersion();
@@ -76,11 +101,11 @@ export async function runCli(argv: string[]): Promise<number> {
       .option('--prefix <text>', 'Prefix token value')
       .option('--pattern <pattern>', 'Filename pattern', '{prefix}-{index}')
       .option('--custom <text>', 'Custom token value for {custom}')
-      .option('--quality <number>', 'WebP quality (default: 85)', (v) => Number(v), 85)
-      .option('--alphaQuality <number>', 'WebP alpha quality (default: 100)', (v) => Number(v), 100)
+      .option('--quality <number>', 'WebP quality (default: 85)', (v) => parseRangeOption(v, '--quality', 1, 100), 85)
+      .option('--alphaQuality <number>', 'WebP alpha quality (default: 100)', (v) => parseRangeOption(v, '--alphaQuality', 0, 100), 100)
       .option('--lossless', 'Enable lossless WebP', false)
-      .option('--maxWidth <number>', 'Resize max width', (v) => Number(v))
-      .option('--maxHeight <number>', 'Resize max height', (v) => Number(v))
+      .option('--maxWidth <number>', 'Resize max width', (v) => parsePositiveIntegerOption(v, '--maxWidth'))
+      .option('--maxHeight <number>', 'Resize max height', (v) => parsePositiveIntegerOption(v, '--maxHeight'))
       .option('--recursive', 'Recursively discover files', false)
       .option('--dryRun', 'Print planned mappings only', false)
       .option('--keepMetadata', 'Preserve metadata in output files', false)

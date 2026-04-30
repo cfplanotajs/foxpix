@@ -49,7 +49,7 @@ function createWindow(): void {
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(app.getAppPath(), 'dist-electron/preload.js'),
+      preload: path.join(app.getAppPath(), 'dist-electron/electron/preload.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
