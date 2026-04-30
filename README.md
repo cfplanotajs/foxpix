@@ -151,6 +151,8 @@ The GUI is a local shell over the existing core pipeline. Processing stays in El
 npm run dev:gui
 ```
 
+This launches the Electron desktop app in development mode (Vite renderer + Electron main/preload), not just a browser tab.
+
 ### GUI build
 
 ```bash

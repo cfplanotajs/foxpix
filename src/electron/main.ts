@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { stat } from 'node:fs/promises';
 import { discoverFiles } from '../core/fileDiscovery.js';
 import { buildRenamePlan } from '../core/rename.js';
@@ -45,20 +46,23 @@ function normalizeOptions(options: GuiOptions): CliOptions {
 }
 
 function createWindow(): void {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(app.getAppPath(), 'dist-electron/electron/preload.js'),
+      preload: path.resolve(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
   });
 
-  if (process.env.VITE_DEV_SERVER_URL) {
-    void win.loadURL(process.env.VITE_DEV_SERVER_URL);
+  const devUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devUrl) {
+    void win.loadURL(devUrl);
   } else {
-    void win.loadFile(path.join(app.getAppPath(), 'dist-ui/index.html'));
+    void win.loadFile(path.resolve(__dirname, '../../dist-ui/index.html'));
   }
 }
 
@@ -75,7 +79,7 @@ app.whenReady().then(() => {
     return result.canceled ? null : result.filePaths[0] ?? null;
   });
 
-  ipcMain.handle('foxpix:preview', async (_event, rawOptions: GuiOptions) => {
+  ipcMain.handle('foxpix:preview', async (_event: unknown, rawOptions: GuiOptions) => {
     const options = normalizeOptions(rawOptions);
     const discovered = await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive });
     const plan = await buildRenamePlan({
@@ -104,7 +108,7 @@ app.whenReady().then(() => {
     };
   });
 
-  ipcMain.handle('foxpix:process', async (_event, rawOptions: GuiOptions) => {
+  ipcMain.handle('foxpix:process', async (_event: unknown, rawOptions: GuiOptions) => {
     const options = normalizeOptions(rawOptions);
     const discovered = await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive });
     const plan = await buildRenamePlan({
@@ -124,7 +128,7 @@ app.whenReady().then(() => {
     };
   });
 
-  ipcMain.handle('foxpix:openFolder', async (_event, folderPath: string) => {
+  ipcMain.handle('foxpix:openFolder', async (_event: unknown, folderPath: string) => {
     await shell.openPath(folderPath);
     return true;
   });

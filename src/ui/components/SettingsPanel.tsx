@@ -14,10 +14,10 @@ export default function SettingsPanel({ options, onChange, disabled }: SettingsP
         <label>Prefix<input disabled={disabled} value={options.prefix ?? ''} onChange={(e) => onChange({ ...options, prefix: e.target.value })} /></label>
         <label>Custom token<input disabled={disabled} value={options.custom ?? ''} onChange={(e) => onChange({ ...options, custom: e.target.value })} /></label>
         <label>Pattern<input disabled={disabled} value={options.pattern} onChange={(e) => onChange({ ...options, pattern: e.target.value })} /></label>
-        <label>Quality<input disabled={disabled} type="number" min={1} max={100} value={options.quality} onChange={(e) => onChange({ ...options, quality: Number(e.target.value) })} /></label>
-        <label>Alpha quality<input disabled={disabled} type="number" min={1} max={100} value={options.alphaQuality} onChange={(e) => onChange({ ...options, alphaQuality: Number(e.target.value) })} /></label>
-        <label>Max width<input disabled={disabled} type="number" value={options.maxWidth ?? ''} onChange={(e) => onChange({ ...options, maxWidth: e.target.value ? Number(e.target.value) : undefined })} /></label>
-        <label>Max height<input disabled={disabled} type="number" value={options.maxHeight ?? ''} onChange={(e) => onChange({ ...options, maxHeight: e.target.value ? Number(e.target.value) : undefined })} /></label>
+        <label>Quality<input disabled={disabled} type="number" min={1} max={100} step={1} value={options.quality} onChange={(e) => onChange({ ...options, quality: Number(e.target.value) })} /></label>
+        <label>Alpha quality<input disabled={disabled} type="number" min={0} max={100} step={1} value={options.alphaQuality} onChange={(e) => onChange({ ...options, alphaQuality: Number(e.target.value) })} /></label>
+        <label>Max width<input disabled={disabled} type="number" min={1} step={1} value={options.maxWidth ?? ''} onChange={(e) => onChange({ ...options, maxWidth: e.target.value ? Number(e.target.value) : undefined })} /></label>
+        <label>Max height<input disabled={disabled} type="number" min={1} step={1} value={options.maxHeight ?? ''} onChange={(e) => onChange({ ...options, maxHeight: e.target.value ? Number(e.target.value) : undefined })} /></label>
       </div>
       <div className="checks">
         <label><input disabled={disabled} type="checkbox" checked={options.recursive} onChange={(e) => onChange({ ...options, recursive: e.target.checked })} /> Recursive</label>

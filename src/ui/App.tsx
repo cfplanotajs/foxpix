@@ -24,6 +24,22 @@ function toMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function validateOptions(options: GuiOptions): string | null {
+  if (!Number.isInteger(options.quality) || options.quality < 1 || options.quality > 100) {
+    return 'Quality must be an integer between 1 and 100.';
+  }
+  if (!Number.isInteger(options.alphaQuality) || options.alphaQuality < 0 || options.alphaQuality > 100) {
+    return 'Alpha quality must be an integer between 0 and 100.';
+  }
+  if (options.maxWidth !== undefined && (!Number.isInteger(options.maxWidth) || options.maxWidth < 1)) {
+    return 'Max width must be a positive integer when provided.';
+  }
+  if (options.maxHeight !== undefined && (!Number.isInteger(options.maxHeight) || options.maxHeight < 1)) {
+    return 'Max height must be a positive integer when provided.';
+  }
+  return null;
+}
+
 export default function App(): JSX.Element {
   const [options, setOptions] = useState<GuiOptions>(defaults);
   const [outputTouched, setOutputTouched] = useState(false);
@@ -38,6 +54,8 @@ export default function App(): JSX.Element {
     if (!options.input) return '';
     return `${options.input}/optimized`;
   }, [options.input, options.output]);
+
+  const validationError = validateOptions(options);
 
   const pickInput = async (): Promise<void> => {
     const picked = await window.foxpix.selectInputFolder();
@@ -59,6 +77,11 @@ export default function App(): JSX.Element {
   };
 
   const handlePreview = async (): Promise<void> => {
+    if (validationError) {
+      setStatus(validationError);
+      return;
+    }
+
     setBusy(true);
     setStatus('Preparing preview...');
     try {
@@ -73,6 +96,11 @@ export default function App(): JSX.Element {
   };
 
   const handleProcess = async (): Promise<void> => {
+    if (validationError) {
+      setStatus(validationError);
+      return;
+    }
+
     setBusy(true);
     setStatus('Processing batch...');
     try {
@@ -94,13 +122,13 @@ export default function App(): JSX.Element {
         <FolderPicker input={options.input} output={outputDisplay} onInputPick={pickInput} onOutputPick={pickOutput} />
         <SettingsPanel options={options} onChange={setOptions} disabled={busy} />
         <div className="actions">
-          <button type="button" onClick={() => void handlePreview()} disabled={busy || !options.input}>Preview (dry run)</button>
-          <button type="button" onClick={() => void handleProcess()} disabled={busy || !options.input}>Process</button>
+          <button type="button" onClick={() => void handlePreview()} disabled={busy || !options.input || Boolean(validationError)}>Preview (dry run)</button>
+          <button type="button" onClick={() => void handleProcess()} disabled={busy || !options.input || Boolean(validationError)}>Process</button>
           <button type="button" onClick={() => void window.foxpix.openFolder(outputDisplay)} disabled={!outputDisplay}>Open output folder</button>
         </div>
       </section>
       <section className="right">
-        <ProgressPanel busy={busy} label={status} />
+        <ProgressPanel busy={busy} label={validationError ?? status} />
         <PreviewTable rows={previewRows} />
         <SummaryPanel summary={summary} manifestPath={manifestPath} />
       </section>
