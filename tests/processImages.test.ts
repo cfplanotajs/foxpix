@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtemp, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -111,4 +111,63 @@ describe('processImages integration', () => {
     expect(summary.files[0].width).toBe(25);
     expect(summary.files[0].height).toBe(13);
   });
+
+  it('accounts original bytes for mixed success and failed files', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-mixed-'));
+    const inputGood = path.join(dir, 'good.png');
+    const inputBad = path.join(dir, 'bad.png');
+    const outputDir = path.join(dir, 'optimized');
+
+    await sharp({
+      create: {
+        width: 32,
+        height: 32,
+        channels: 4,
+        background: { r: 200, g: 50, b: 40, alpha: 1 }
+      }
+    }).png().toFile(inputGood);
+
+    await writeFile(inputBad, 'invalid-image-content', 'utf8');
+
+    const files: DiscoveredFile[] = [
+      { absolutePath: inputGood, relativePath: 'good.png', name: 'good', extension: '.png', folderName: 'input' },
+      { absolutePath: inputBad, relativePath: 'bad.png', name: 'bad', extension: '.png', folderName: 'input' }
+    ];
+
+    const plan: RenamePlanItem[] = [
+      { source: files[0], outputFilename: 'good-001.webp', outputPath: path.join(outputDir, 'good-001.webp') },
+      { source: files[1], outputFilename: 'bad-002.webp', outputPath: path.join(outputDir, 'bad-002.webp') }
+    ];
+
+    const options: CliOptions = {
+      input: dir,
+      output: outputDir,
+      prefix: 'mixed',
+      pattern: '{prefix}-{index}',
+      quality: 85,
+      alphaQuality: 100,
+      lossless: false,
+      recursive: false,
+      dryRun: false,
+      keepMetadata: false
+    };
+
+    const summary = await processImages(plan, options);
+
+    expect(summary.processed).toBe(2);
+    expect(summary.succeeded).toBe(1);
+    expect(summary.failed).toBe(1);
+
+    const failedItem = summary.files.find((f) => f.status === 'failed');
+    expect(failedItem).toBeDefined();
+    expect((failedItem?.originalSize ?? 0)).toBeGreaterThan(0);
+
+    const goodSize = summary.files.find((f) => f.outputFilename === 'good-001.webp')?.outputSize ?? 0;
+    expect(summary.outputBytes).toBe(goodSize);
+
+    const totalOriginal = summary.files.reduce((sum, file) => sum + file.originalSize, 0);
+    expect(summary.originalBytes).toBe(totalOriginal);
+    expect(summary.savedBytes).toBe(summary.originalBytes - summary.outputBytes);
+  });
+
 });

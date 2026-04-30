@@ -111,6 +111,12 @@ npm run test
 npm run build
 ```
 
+
+## Exit codes (automation)
+
+- `0`: run completed successfully (or dry run planned successfully)
+- `1`: one or more files failed during processing, or a fatal CLI/setup error occurred
+
 ## Recommended settings for web images
 
 - `quality: 85`

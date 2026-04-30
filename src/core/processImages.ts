@@ -52,12 +52,13 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
         status: 'success'
       });
     } catch (error) {
+      const originalStat = await stat(item.source.absolutePath).catch(() => null);
       files.push({
         originalFilename: item.source.relativePath,
         outputFilename: item.outputFilename,
         originalPath: item.source.absolutePath,
         outputPath: item.outputPath,
-        originalSize: 0,
+        originalSize: originalStat?.size ?? 0,
         outputSize: 0,
         width: 0,
         height: 0,

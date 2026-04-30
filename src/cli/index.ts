@@ -26,7 +26,7 @@ function isSamePath(a: string, b: string): boolean {
   return path.resolve(a) === path.resolve(b);
 }
 
-async function main(): Promise<void> {
+export async function runCli(argv: string[]): Promise<number> {
   const program = new Command();
   program
     .name('foxpix')
@@ -44,7 +44,8 @@ async function main(): Promise<void> {
     .option('--recursive', 'Recursively discover files', false)
     .option('--dryRun', 'Print planned mappings only', false)
     .option('--keepMetadata', 'Preserve metadata in output files', false)
-    .parse(process.argv);
+    .exitOverride()
+    .parse(argv, { from: 'user' });
 
   const raw = program.opts();
   const inputFolder = path.resolve(raw.input);
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
   const discovered = await discoverFiles({ inputFolder, outputFolder, recursive: options.recursive });
   if (discovered.length === 0) {
     console.log('No supported image files found. Supported: .png .jpg .jpeg .webp .tiff .tif .avif');
-    return;
+    return 0;
   }
 
   const plan = await buildRenamePlan({
@@ -98,30 +99,41 @@ async function main(): Promise<void> {
   if (options.dryRun) {
     console.log(`Total planned: ${plan.length}`);
     console.log('No files were written and no manifest was created.');
-    return;
+    return 0;
   }
 
-  const summary = await processImages(plan, { ...options, input: inputFolder, output: outputFolder });
-  const manifest = createManifest({ ...options, input: inputFolder, output: outputFolder }, summary);
+  const summary = await processImages(plan, options);
+  const manifest = createManifest(options, summary);
   const manifestPath = await writeManifest(outputFolder, manifest);
 
   console.log(`Processed: ${summary.processed}`);
   console.log(`Succeeded: ${summary.succeeded}`);
   console.log(`Failed: ${summary.failed}`);
-  console.log(`Total before: ${bytesToMb(summary.originalBytes)}`);
-  console.log(`Total after: ${bytesToMb(summary.outputBytes)}`);
+  console.log(`Total original bytes: ${summary.originalBytes} (${bytesToMb(summary.originalBytes)})`);
+  console.log(`Total output bytes: ${summary.outputBytes} (${bytesToMb(summary.outputBytes)})`);
+  console.log(`Total saved bytes: ${summary.savedBytes} (${bytesToMb(summary.savedBytes)})`);
   console.log(`Saved: ${summary.savedPercent}%`);
   console.log(`Manifest: ${manifestPath}`);
 
   if (summary.failed > 0) {
+    console.log('Command completed with failures. Exiting with status code 1 for automation safety.');
     console.log('Failures:');
     for (const file of summary.files.filter((f) => f.status === 'failed')) {
       console.log(`- ${file.originalFilename}: ${file.error}`);
     }
+    return 1;
+  }
+
+  return 0;
+}
+
+async function main(): Promise<void> {
+  try {
+    process.exitCode = await runCli(process.argv.slice(2));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(1);
-});
+main();
