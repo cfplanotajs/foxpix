@@ -17,12 +17,22 @@ async function createValidPng(filePath: string): Promise<void> {
 }
 
 describe('CLI exit codes', () => {
+  it('importing CLI module does not auto-run main', async () => {
+    const previous = process.exitCode;
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await import('../src/cli/index.js');
+
+    expect(console.error).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(previous);
+
+    errorSpy.mockRestore();
+  });
+
   it('returns zero for --help', async () => {
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
     await expect(runCli(['node', 'foxpix', '--help'])).resolves.toBe(0);
     outSpy.mockRestore();
-    logSpy.mockRestore();
   });
 
   it('returns zero for --version', async () => {
@@ -32,7 +42,9 @@ describe('CLI exit codes', () => {
   });
 
   it('returns non-zero for invalid input path', async () => {
-    await expect(runCli(['--input', '/definitely/not/a/real/path'])).rejects.toThrow();
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(runCli(['--input', '/definitely/not/a/real/path'])).resolves.toBe(1);
+    errSpy.mockRestore();
   });
 
   it('returns non-zero when at least one file fails', async () => {
