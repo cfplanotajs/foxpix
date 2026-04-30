@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command, CommanderError } from 'commander';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { readFile, stat } from 'node:fs/promises';
 import { discoverFiles } from '../core/fileDiscovery.js';
 import { buildRenamePlan } from '../core/rename.js';
@@ -9,10 +10,16 @@ import { createManifest, writeManifest } from '../core/manifest.js';
 import type { CliOptions } from '../types/index.js';
 
 async function getCliVersion(): Promise<string> {
-  const packageJsonPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../package.json');
-  const raw = await readFile(packageJsonPath, 'utf8');
-  const parsed = JSON.parse(raw) as { version?: string };
-  return parsed.version || '0.0.0';
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const packageJsonPath = path.resolve(__dirname, '../../package.json');
+    const raw = await readFile(packageJsonPath, 'utf8');
+    const parsed = JSON.parse(raw) as { version?: string };
+    return parsed.version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
 }
 
 async function ensureInputFolder(inputFolder: string): Promise<void> {
