@@ -1,0 +1,30 @@
+{
+  "name": "foxpix",
+  "version": "0.1.0",
+  "description": "Local batch image optimizer CLI for web-production workflows",
+  "type": "module",
+  "main": "dist/cli/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "optimize": "tsx src/cli/index.ts",
+    "create-samples": "tsx scripts/create-sample-images.ts"
+  },
+  "bin": {
+    "foxpix": "dist/cli/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
