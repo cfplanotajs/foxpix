@@ -62,12 +62,6 @@ function isSamePath(a: string, b: string): boolean {
   return path.resolve(a) === path.resolve(b);
 }
 
-function normalizeUserArgv(argv: string[]): string[] {
-  if (argv.length >= 2 && !argv[0].startsWith('-') && !argv[1].startsWith('-')) {
-    return argv.slice(2);
-  }
-  return argv;
-}
 
 export async function runCli(argv: string[]): Promise<number> {
   try {
@@ -90,9 +84,10 @@ export async function runCli(argv: string[]): Promise<number> {
       .option('--recursive', 'Recursively discover files', false)
       .option('--dryRun', 'Print planned mappings only', false)
       .option('--keepMetadata', 'Preserve metadata in output files', false)
+      .allowExcessArguments(false)
       .exitOverride();
 
-    program.parse(normalizeUserArgv(argv), { from: 'user' });
+    program.parse(argv, { from: 'user' });
 
     const raw = program.opts();
     const inputFolder = path.resolve(raw.input);

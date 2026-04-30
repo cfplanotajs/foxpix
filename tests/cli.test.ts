@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -31,13 +32,13 @@ describe('CLI exit codes', () => {
 
   it('returns zero for --help', async () => {
     const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    await expect(runCli(['node', 'foxpix', '--help'])).resolves.toBe(0);
+    await expect(runCli(['--help'])).resolves.toBe(0);
     outSpy.mockRestore();
   });
 
   it('returns zero for --version', async () => {
     const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    await expect(runCli(['node', 'foxpix', '--version'])).resolves.toBe(0);
+    await expect(runCli(['--version'])).resolves.toBe(0);
     outSpy.mockRestore();
   });
 
@@ -93,4 +94,25 @@ describe('CLI exit codes', () => {
 
     logSpy.mockRestore();
   });
+
+  it('rejects unexpected positional arguments and writes nothing', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'foxpix-cli-positional-'));
+    const input = path.join(root, 'input');
+    const defaultOutput = path.join(input, 'optimized');
+    await mkdir(input, { recursive: true });
+    await createValidPng(path.join(input, 'good.png'));
+
+    const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const errSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const code = await runCli(['foo', 'bar', '--input', input, '--dryRun']);
+
+    expect(code).not.toBe(0);
+    expect(existsSync(defaultOutput)).toBe(false);
+    expect(existsSync(path.join(defaultOutput, 'manifest.json'))).toBe(false);
+
+    outSpy.mockRestore();
+    errSpy.mockRestore();
+  });
+
 });
