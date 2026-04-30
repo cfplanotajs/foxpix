@@ -124,7 +124,7 @@ export default function App(): JSX.Element {
         <div className="actions">
           <button type="button" onClick={() => void handlePreview()} disabled={busy || !options.input || Boolean(validationError)}>Preview (dry run)</button>
           <button type="button" onClick={() => void handleProcess()} disabled={busy || !options.input || Boolean(validationError)}>Process</button>
-          <button type="button" onClick={() => void window.foxpix.openFolder(outputDisplay)} disabled={!outputDisplay}>Open output folder</button>
+          <button type="button" onClick={() => void (async () => { const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open folder failed: ${result.error}`); })()} disabled={!outputDisplay}>Open output folder</button>
         </div>
       </section>
       <section className="right">

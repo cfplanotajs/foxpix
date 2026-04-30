@@ -129,8 +129,15 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('foxpix:openFolder', async (_event: unknown, folderPath: string) => {
-    await shell.openPath(folderPath);
-    return true;
+    try {
+      const result = await shell.openPath(folderPath);
+      if (result === '') {
+        return { ok: true as const };
+      }
+      return { ok: false as const, error: result };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
   });
 });
 
