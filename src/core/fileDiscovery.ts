@@ -15,6 +15,11 @@ function naturalSort(a: string, b: string): number {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
 }
 
+function isSameOrSubPath(parent: string, target: string): boolean {
+  const relative = path.relative(parent, target);
+  return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
 export async function discoverFiles(options: DiscoverOptions): Promise<DiscoveredFile[]> {
   const inputFolder = path.resolve(options.inputFolder);
   const outputFolder = options.outputFolder ? path.resolve(options.outputFolder) : undefined;
@@ -24,7 +29,7 @@ export async function discoverFiles(options: DiscoverOptions): Promise<Discovere
     const entries = await readdir(currentDir, { withFileTypes: true });
     for (const entry of entries) {
       const absolutePath = path.join(currentDir, entry.name);
-      if (outputFolder && absolutePath.startsWith(outputFolder)) {
+      if (outputFolder && isSameOrSubPath(outputFolder, absolutePath)) {
         continue;
       }
 

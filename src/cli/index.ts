@@ -9,18 +9,21 @@ import { createManifest, writeManifest } from '../core/manifest.js';
 import type { CliOptions } from '../types/index.js';
 
 async function ensureInputFolder(input: string): Promise<void> {
-  try {
-    const stats = await stat(input);
-    if (!stats.isDirectory()) {
-      throw new Error(`Input path is not a directory: ${input}`);
-    }
-  } catch {
+  const stats = await stat(input).catch(() => null);
+  if (!stats) {
     throw new Error(`Input folder does not exist: ${input}`);
+  }
+  if (!stats.isDirectory()) {
+    throw new Error(`Input path is not a directory: ${input}`);
   }
 }
 
 function bytesToMb(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function isSamePath(a: string, b: string): boolean {
+  return path.resolve(a) === path.resolve(b);
 }
 
 async function main(): Promise<void> {
@@ -45,7 +48,8 @@ async function main(): Promise<void> {
 
   const raw = program.opts();
   const input = path.resolve(raw.input);
-  const output = path.resolve(raw.output || path.join(input, 'optimized'));
+  const requestedOutput = raw.output ? path.resolve(raw.output) : path.join(input, 'optimized');
+  const output = isSamePath(input, requestedOutput) ? path.join(input, 'optimized') : requestedOutput;
 
   const options: CliOptions = {
     input,
@@ -68,7 +72,7 @@ async function main(): Promise<void> {
   const discovered = await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive });
   if (discovered.length === 0) {
     console.log('No supported image files found. Supported: .png .jpg .jpeg .webp .tiff .tif .avif');
-    process.exit(0);
+    return;
   }
 
   const plan = await buildRenamePlan({
@@ -79,19 +83,19 @@ async function main(): Promise<void> {
     custom: options.custom
   });
 
-  console.log(options.dryRun ? 'DRY RUN: Planned output mapping' : 'Processing images');
+  console.log(options.dryRun ? 'DRY RUN MODE (no files will be written)' : 'PROCESSING MODE');
   console.log(`Input folder: ${options.input}`);
   console.log(`Output folder: ${options.output}`);
   console.log(`Discovered images: ${discovered.length}`);
   console.log(`Settings: quality=${options.quality}, alphaQuality=${options.alphaQuality}, lossless=${options.lossless}, recursive=${options.recursive}, keepMetadata=${options.keepMetadata}`);
-
+  console.log('Planned mappings:');
   for (const item of plan) {
-    console.log(`${item.source.relativePath} -> ${item.outputFilename}`);
+    console.log(`- ${item.source.relativePath} -> ${item.outputFilename}`);
   }
 
   if (options.dryRun) {
-    console.log(`Total files: ${plan.length}`);
-    console.log('No files were written.');
+    console.log(`Total planned: ${plan.length}`);
+    console.log('No files were written and no manifest was created.');
     return;
   }
 
@@ -99,6 +103,7 @@ async function main(): Promise<void> {
   const manifest = createManifest(options, summary);
   const manifestPath = await writeManifest(options.output, manifest);
 
+  console.log(`Processed: ${summary.processed}`);
   console.log(`Succeeded: ${summary.succeeded}`);
   console.log(`Failed: ${summary.failed}`);
   console.log(`Total before: ${bytesToMb(summary.originalBytes)}`);
@@ -107,7 +112,7 @@ async function main(): Promise<void> {
   console.log(`Manifest: ${manifestPath}`);
 
   if (summary.failed > 0) {
-    console.log('Some files failed:');
+    console.log('Failures:');
     for (const file of summary.files.filter((f) => f.status === 'failed')) {
       console.log(`- ${file.originalFilename}: ${file.error}`);
     }

@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "optimize": "tsx src/cli/index.ts"
+    "optimize": "tsx src/cli/index.ts",
+    "create-samples": "tsx scripts/create-sample-images.ts"
   },
   "bin": {
     "foxpix": "dist/cli/index.js"

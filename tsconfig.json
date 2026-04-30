@@ -8,8 +8,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
-    "rootDir": "src",
-    "declaration": true
+    "rootDir": ".",
+    "declaration": true,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "scripts"]
 }

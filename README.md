@@ -48,6 +48,14 @@ Options:
 - `--dryRun` (default: `false`)
 - `--keepMetadata` (default: `false`)
 
+## Create sample images
+
+```bash
+npm run create-samples
+```
+
+This generates local fixtures under `sample-input/` for quick validation.
+
 ## Examples
 
 ```bash
@@ -85,7 +93,23 @@ Collision-safe filenames are auto-suffixed (`-2`, `-3`, ...).
 - No background color is applied.
 - Sharp writes WebP directly from source alpha channels.
 
-Manual verification: convert a transparent PNG and inspect the output WebP in a browser/editor checkerboard view.
+Manual transparency check:
+
+1. Run optimization on a transparent PNG.
+2. Open the output WebP in a browser or image editor with checkerboard support.
+3. Verify transparent areas remain transparent (not replaced with white/black).
+
+## Local validation checklist
+
+```bash
+npm install
+npm run create-samples
+npm run optimize -- --input ./sample-input --prefix test --dryRun
+npm run optimize -- --input ./sample-input --prefix test
+npm run typecheck
+npm run test
+npm run build
+```
 
 ## Recommended settings for web images
 

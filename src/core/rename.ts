@@ -15,15 +15,22 @@ function withPadding(index: number): string {
   return String(index).padStart(3, '0');
 }
 
+function slugifyOptional(value?: string): string {
+  if (!value || value.trim().length === 0) {
+    return '';
+  }
+  return slugify(value);
+}
+
 function createBaseName(file: DiscoveredFile, index: number, pattern: string, prefix?: string, custom?: string): string {
-  const basePrefix = slugify(prefix || file.name || 'image');
-  const baseName = slugify(file.name);
+  const basePrefix = slugifyOptional(prefix) || slugify(file.name || 'image');
+  const baseName = slugify(file.name || 'image');
   const resolved = pattern
     .replaceAll('{index}', withPadding(index))
     .replaceAll('{name}', baseName)
     .replaceAll('{prefix}', basePrefix)
     .replaceAll('{folder}', file.folderName)
-    .replaceAll('{custom}', slugify(custom || ''));
+    .replaceAll('{custom}', slugifyOptional(custom));
 
   return slugify(resolved);
 }
@@ -46,10 +53,7 @@ export async function buildRenamePlan(options: RenameOptions): Promise<RenamePla
     let attempt = 1;
     let filename = `${initial}.webp`;
 
-    while (
-      used.has(filename) ||
-      (await fileExists(path.join(options.outputFolder, filename)))
-    ) {
+    while (used.has(filename) || (await fileExists(path.join(options.outputFolder, filename)))) {
       attempt += 1;
       filename = `${initial}-${attempt}.webp`;
     }
