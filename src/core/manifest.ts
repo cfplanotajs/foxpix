@@ -6,7 +6,7 @@ export function createManifest(options: CliOptions, summary: ProcessingSummary):
   return {
     generatedAt: new Date().toISOString(),
     inputFolder: options.input,
-    outputFolder: options.output!,
+    outputFolder: options.output,
     settings: {
       prefix: options.prefix,
       pattern: options.pattern,

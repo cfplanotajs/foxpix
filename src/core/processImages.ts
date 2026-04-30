@@ -3,14 +3,12 @@ import sharp from 'sharp';
 import type { CliOptions, ProcessingSummary, RenamePlanItem, ProcessedFileResult } from '../types/index.js';
 
 export async function processImages(plan: RenamePlanItem[], options: CliOptions): Promise<ProcessingSummary> {
-  await mkdir(options.output!, { recursive: true });
+  await mkdir(options.output, { recursive: true });
 
   const files: ProcessedFileResult[] = [];
   for (const item of plan) {
     try {
       const image = sharp(item.source.absolutePath, { failOn: 'none' });
-      const metadata = await image.metadata();
-
       let pipeline = image;
       if (options.maxWidth || options.maxHeight) {
         pipeline = pipeline.resize({
@@ -36,6 +34,7 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
 
       const originalStat = await stat(item.source.absolutePath);
       const outputStat = await stat(item.outputPath);
+      const outputMetadata = await sharp(item.outputPath).metadata();
       const compressionPercent = originalStat.size > 0
         ? Number((((originalStat.size - outputStat.size) / originalStat.size) * 100).toFixed(2))
         : 0;
@@ -47,8 +46,8 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
         outputPath: item.outputPath,
         originalSize: originalStat.size,
         outputSize: outputStat.size,
-        width: metadata.width ?? 0,
-        height: metadata.height ?? 0,
+        width: outputMetadata.width ?? 0,
+        height: outputMetadata.height ?? 0,
         compressionPercent,
         status: 'success'
       });

@@ -1,6 +1,6 @@
 export interface CliOptions {
   input: string;
-  output?: string;
+  output: string;
   prefix?: string;
   pattern: string;
   custom?: string;

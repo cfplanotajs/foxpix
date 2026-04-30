@@ -8,13 +8,13 @@ import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
 import type { CliOptions } from '../types/index.js';
 
-async function ensureInputFolder(input: string): Promise<void> {
-  const stats = await stat(input).catch(() => null);
+async function ensureInputFolder(inputFolder: string): Promise<void> {
+  const stats = await stat(inputFolder).catch(() => null);
   if (!stats) {
-    throw new Error(`Input folder does not exist: ${input}`);
+    throw new Error(`Input folder does not exist: ${inputFolder}`);
   }
   if (!stats.isDirectory()) {
-    throw new Error(`Input path is not a directory: ${input}`);
+    throw new Error(`Input path is not a directory: ${inputFolder}`);
   }
 }
 
@@ -47,13 +47,17 @@ async function main(): Promise<void> {
     .parse(process.argv);
 
   const raw = program.opts();
-  const input = path.resolve(raw.input);
-  const requestedOutput = raw.output ? path.resolve(raw.output) : path.join(input, 'optimized');
-  const output = isSamePath(input, requestedOutput) ? path.join(input, 'optimized') : requestedOutput;
+  const inputFolder = path.resolve(raw.input);
+  await ensureInputFolder(inputFolder);
+
+  let outputFolder = raw.output ? path.resolve(raw.output) : path.join(inputFolder, 'optimized');
+  if (isSamePath(outputFolder, inputFolder)) {
+    outputFolder = path.join(inputFolder, 'optimized');
+  }
 
   const options: CliOptions = {
-    input,
-    output,
+    input: inputFolder,
+    output: outputFolder,
     prefix: raw.prefix,
     pattern: raw.pattern,
     custom: raw.custom,
@@ -67,9 +71,7 @@ async function main(): Promise<void> {
     keepMetadata: Boolean(raw.keepMetadata)
   };
 
-  await ensureInputFolder(options.input);
-
-  const discovered = await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive });
+  const discovered = await discoverFiles({ inputFolder, outputFolder, recursive: options.recursive });
   if (discovered.length === 0) {
     console.log('No supported image files found. Supported: .png .jpg .jpeg .webp .tiff .tif .avif');
     return;
@@ -77,15 +79,15 @@ async function main(): Promise<void> {
 
   const plan = await buildRenamePlan({
     files: discovered,
-    outputFolder: options.output,
+    outputFolder,
     pattern: options.pattern,
     prefix: options.prefix,
     custom: options.custom
   });
 
   console.log(options.dryRun ? 'DRY RUN MODE (no files will be written)' : 'PROCESSING MODE');
-  console.log(`Input folder: ${options.input}`);
-  console.log(`Output folder: ${options.output}`);
+  console.log(`Input folder: ${inputFolder}`);
+  console.log(`Output folder: ${outputFolder}`);
   console.log(`Discovered images: ${discovered.length}`);
   console.log(`Settings: quality=${options.quality}, alphaQuality=${options.alphaQuality}, lossless=${options.lossless}, recursive=${options.recursive}, keepMetadata=${options.keepMetadata}`);
   console.log('Planned mappings:');
@@ -99,9 +101,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  const summary = await processImages(plan, options);
-  const manifest = createManifest(options, summary);
-  const manifestPath = await writeManifest(options.output, manifest);
+  const summary = await processImages(plan, { ...options, input: inputFolder, output: outputFolder });
+  const manifest = createManifest({ ...options, input: inputFolder, output: outputFolder }, summary);
+  const manifestPath = await writeManifest(outputFolder, manifest);
 
   console.log(`Processed: ${summary.processed}`);
   console.log(`Succeeded: ${summary.succeeded}`);
