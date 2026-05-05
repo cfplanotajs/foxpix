@@ -25,6 +25,8 @@ export function createManifest(options: CliOptions, summary: ProcessingSummary):
       succeeded: summary.succeeded,
       failed: summary.failed,
       originalBytes: summary.originalBytes,
+      succeededOriginalBytes: summary.succeededOriginalBytes,
+      failedOriginalBytes: summary.failedOriginalBytes,
       outputBytes: summary.outputBytes,
       savedBytes: summary.savedBytes,
       savedPercent: summary.savedPercent

@@ -20,6 +20,12 @@ describe('rename plan', () => {
     expect(plan[0].outputFilename).toBe('sample-image-001.webp');
   });
 
+  it('slugifies {name} to web-safe filename', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-'));
+    const plan = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{name}' });
+    expect(plan[0].outputFilename).toBe('sample-image.webp');
+  });
+
   it('supports custom pattern with name token', async () => {
     const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-'));
     const plan = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{name}-{index}' });

@@ -10,7 +10,9 @@ export default function SummaryPanel({ summary, manifestPath }: { summary: Proce
         <li>Processed: {summary.processed}</li>
         <li>Succeeded: {summary.succeeded}</li>
         <li>Failed: {summary.failed}</li>
-        <li>Original bytes: {summary.originalBytes}</li>
+        <li>Total input bytes: {summary.originalBytes}</li>
+        <li>Optimized input bytes: {summary.succeededOriginalBytes}</li>
+        <li>Failed input bytes: {summary.failedOriginalBytes}</li>
         <li>Output bytes: {summary.outputBytes}</li>
         <li>Saved bytes: {summary.savedBytes}</li>
         <li>Saved percent: {summary.savedPercent}%</li>

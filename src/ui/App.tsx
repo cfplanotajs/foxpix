@@ -11,7 +11,7 @@ const defaults: GuiOptions = {
   input: '',
   output: '',
   prefix: '',
-  pattern: '{prefix}-{index}',
+  pattern: '{name}',
   custom: '',
   quality: 85,
   alphaQuality: 100,

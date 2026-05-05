@@ -26,6 +26,8 @@ describe('manifest', () => {
       succeeded: 1,
       failed: 1,
       originalBytes: 1000,
+      succeededOriginalBytes: 800,
+      failedOriginalBytes: 200,
       outputBytes: 600,
       savedBytes: 400,
       savedPercent: 40,
@@ -35,6 +37,7 @@ describe('manifest', () => {
     const manifest = createManifest(options, summary);
     expect(manifest.totals.discovered).toBe(2);
     expect(manifest.totals.savedPercent).toBe(40);
+    expect(manifest.totals.failedOriginalBytes).toBe(200);
   });
 
   it('keeps failed item shape and compression percent', () => {
@@ -44,6 +47,8 @@ describe('manifest', () => {
       succeeded: 0,
       failed: 1,
       originalBytes: 0,
+      succeededOriginalBytes: 0,
+      failedOriginalBytes: 0,
       outputBytes: 0,
       savedBytes: 0,
       savedPercent: 0,

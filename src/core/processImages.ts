@@ -73,9 +73,11 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
   const succeeded = files.filter((f) => f.status === 'success').length;
   const failed = files.filter((f) => f.status === 'failed').length;
   const originalBytes = files.reduce((sum, f) => sum + f.originalSize, 0);
-  const outputBytes = files.reduce((sum, f) => sum + f.outputSize, 0);
-  const savedBytes = originalBytes - outputBytes;
-  const savedPercent = originalBytes > 0 ? Number(((savedBytes / originalBytes) * 100).toFixed(2)) : 0;
+  const succeededOriginalBytes = files.filter((f) => f.status === 'success').reduce((sum, f) => sum + f.originalSize, 0);
+  const failedOriginalBytes = files.filter((f) => f.status === 'failed').reduce((sum, f) => sum + f.originalSize, 0);
+  const outputBytes = files.filter((f) => f.status === 'success').reduce((sum, f) => sum + f.outputSize, 0);
+  const savedBytes = succeededOriginalBytes - outputBytes;
+  const savedPercent = succeededOriginalBytes > 0 ? Number(((savedBytes / succeededOriginalBytes) * 100).toFixed(2)) : 0;
 
-  return { discovered, processed, succeeded, failed, originalBytes, outputBytes, savedBytes, savedPercent, files };
+  return { discovered, processed, succeeded, failed, originalBytes, succeededOriginalBytes, failedOriginalBytes, outputBytes, savedBytes, savedPercent, files };
 }

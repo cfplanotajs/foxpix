@@ -48,6 +48,8 @@ export interface ProcessingSummary {
   succeeded: number;
   failed: number;
   originalBytes: number;
+  succeededOriginalBytes: number;
+  failedOriginalBytes: number;
   outputBytes: number;
   savedBytes: number;
   savedPercent: number;

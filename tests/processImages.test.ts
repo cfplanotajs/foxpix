@@ -162,12 +162,24 @@ describe('processImages integration', () => {
     expect(failedItem).toBeDefined();
     expect((failedItem?.originalSize ?? 0)).toBeGreaterThan(0);
 
-    const goodSize = summary.files.find((f) => f.outputFilename === 'good-001.webp')?.outputSize ?? 0;
+    const successfulFiles = summary.files.filter((f) => f.status === 'success');
+    const failedFiles = summary.files.filter((f) => f.status === 'failed');
+
+    const goodSize = successfulFiles.find((f) => f.outputFilename === 'good-001.webp')?.outputSize ?? 0;
     expect(summary.outputBytes).toBe(goodSize);
 
     const totalOriginal = summary.files.reduce((sum, file) => sum + file.originalSize, 0);
+    const succeededOriginal = successfulFiles.reduce((sum, file) => sum + file.originalSize, 0);
+    const failedOriginal = failedFiles.reduce((sum, file) => sum + file.originalSize, 0);
+
     expect(summary.originalBytes).toBe(totalOriginal);
-    expect(summary.savedBytes).toBe(summary.originalBytes - summary.outputBytes);
+    expect(summary.succeededOriginalBytes).toBe(succeededOriginal);
+    expect(summary.failedOriginalBytes).toBe(failedOriginal);
+    expect(summary.savedBytes).toBe(summary.succeededOriginalBytes - summary.outputBytes);
+    const expectedSavedPercent = summary.succeededOriginalBytes > 0
+      ? Number(((summary.savedBytes / summary.succeededOriginalBytes) * 100).toFixed(2))
+      : 0;
+    expect(summary.savedPercent).toBe(expectedSavedPercent);
   });
 
 
