@@ -48,6 +48,7 @@ export default function App(): JSX.Element {
   const [manifestPath, setManifestPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('Idle');
+  const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
 
   const outputDisplay = useMemo(() => {
     if (options.output) return options.output;
@@ -56,8 +57,10 @@ export default function App(): JSX.Element {
   }, [options.input, options.output]);
 
   const validationError = validateOptions(options);
+  const bridgeError = bridgeAvailable ? null : 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
 
   const pickInput = async (): Promise<void> => {
+    if (!bridgeAvailable) return;
     const picked = await window.foxpix.selectInputFolder();
     if (!picked) return;
 
@@ -69,6 +72,7 @@ export default function App(): JSX.Element {
   };
 
   const pickOutput = async (): Promise<void> => {
+    if (!bridgeAvailable) return;
     const picked = await window.foxpix.selectOutputFolder();
     if (picked) {
       setOptions((prev) => ({ ...prev, output: picked }));
@@ -77,6 +81,10 @@ export default function App(): JSX.Element {
   };
 
   const handlePreview = async (): Promise<void> => {
+    if (bridgeError) {
+      setStatus(bridgeError);
+      return;
+    }
     if (validationError) {
       setStatus(validationError);
       return;
@@ -96,6 +104,10 @@ export default function App(): JSX.Element {
   };
 
   const handleProcess = async (): Promise<void> => {
+    if (bridgeError) {
+      setStatus(bridgeError);
+      return;
+    }
     if (validationError) {
       setStatus(validationError);
       return;
@@ -119,16 +131,16 @@ export default function App(): JSX.Element {
     <main className="app">
       <section className="left">
         <h1>FoxPix GUI MVP</h1>
-        <FolderPicker input={options.input} output={outputDisplay} onInputPick={pickInput} onOutputPick={pickOutput} />
+        <FolderPicker input={options.input} output={outputDisplay} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
         <SettingsPanel options={options} onChange={setOptions} disabled={busy} />
         <div className="actions">
-          <button type="button" onClick={() => void handlePreview()} disabled={busy || !options.input || Boolean(validationError)}>Preview (dry run)</button>
-          <button type="button" onClick={() => void handleProcess()} disabled={busy || !options.input || Boolean(validationError)}>Process</button>
-          <button type="button" onClick={() => void (async () => { const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open folder failed: ${result.error}`); })()} disabled={!outputDisplay}>Open output folder</button>
+          <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)}>Preview (dry run)</button>
+          <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)}>Process</button>
+          <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) { setStatus('FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.'); return; } const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open folder failed: ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay}>Open output folder</button>
         </div>
       </section>
       <section className="right">
-        <ProgressPanel busy={busy} label={validationError ?? status} />
+        <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
         <PreviewTable rows={previewRows} />
         <SummaryPanel summary={summary} manifestPath={manifestPath} />
       </section>

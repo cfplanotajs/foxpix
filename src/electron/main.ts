@@ -59,11 +59,32 @@ function createWindow(): void {
     }
   });
 
+  win.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (isMainFrame) {
+      console.error('[foxpix] renderer failed to load', { errorCode, errorDescription, validatedURL });
+    }
+  });
+
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[foxpix] renderer process gone', details);
+  });
+
+  if (process.env.VITE_DEV_SERVER_URL) {
+    win.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+      console.log(`[renderer:${level}] ${message} (${sourceId}:${line})`);
+    });
+  }
+
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
-    void win.loadURL(devUrl);
+    void win.loadURL(devUrl).catch((error) => {
+      console.error('[foxpix] failed to load dev renderer URL', devUrl, error);
+    });
   } else {
-    void win.loadFile(path.resolve(__dirname, '../../dist-ui/index.html'));
+    const indexPath = path.resolve(__dirname, '../../dist-ui/index.html');
+    void win.loadFile(indexPath).catch((error) => {
+      console.error('[foxpix] failed to load renderer index file', indexPath, error);
+    });
   }
 }
 
