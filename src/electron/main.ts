@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stat } from 'node:fs/promises';
@@ -49,11 +50,18 @@ function normalizeOptions(options: GuiOptions): CliOptions {
 function createWindow(): void {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
+
+  const preloadPath = path.resolve(__dirname, 'preload.cjs');
+  if (process.env.VITE_DEV_SERVER_URL) {
+    console.log('[foxpix] preload path', preloadPath);
+    console.log('[foxpix] preload exists', existsSync(preloadPath));
+  }
+
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.resolve(__dirname, 'preload.js'),
+      preload: path.resolve(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false
     }
