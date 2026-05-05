@@ -19,7 +19,7 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
       }
 
       if (options.keepMetadata) {
-        pipeline = pipeline.withMetadata();
+        pipeline = pipeline.keepMetadata();
       }
 
       await pipeline

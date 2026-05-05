@@ -219,4 +219,54 @@ describe('processImages integration', () => {
     expect(outputMeta.height).toBe(40);
   });
 
+  it('preserves metadata when keepMetadata is enabled', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-meta-'));
+    const inputFile = path.join(dir, 'meta.jpg');
+    const outputDir = path.join(dir, 'optimized');
+    const outputFile = path.join(outputDir, 'meta-001.webp');
+
+    await sharp({
+      create: {
+        width: 32,
+        height: 16,
+        channels: 3,
+        background: { r: 20, g: 80, b: 160 }
+      }
+    })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toFile(inputFile);
+
+    const discovered: DiscoveredFile = {
+      absolutePath: inputFile,
+      relativePath: 'meta.jpg',
+      name: 'meta',
+      extension: '.jpg',
+      folderName: 'input'
+    };
+
+    const plan: RenamePlanItem[] = [{ source: discovered, outputFilename: 'meta-001.webp', outputPath: outputFile }];
+    const options: CliOptions = {
+      input: dir,
+      output: outputDir,
+      prefix: 'meta',
+      pattern: '{prefix}-{index}',
+      quality: 85,
+      alphaQuality: 100,
+      lossless: false,
+      recursive: false,
+      dryRun: false,
+      keepMetadata: true
+    };
+
+    const summary = await processImages(plan, options);
+    expect(summary.files[0].status).toBe('success');
+
+    const outputMeta = await sharp(outputFile).metadata();
+    expect(outputMeta.exif).toBeDefined();
+    expect(outputMeta.width).toBe(16);
+    expect(outputMeta.height).toBe(32);
+    expect(outputMeta.orientation === undefined || outputMeta.orientation === 1).toBe(true);
+  });
+
 });
