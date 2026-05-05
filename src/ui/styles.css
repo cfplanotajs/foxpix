@@ -1,0 +1,12 @@
+body { margin: 0; font-family: Arial, sans-serif; background: #f4f5f7; color: #1f2937; }
+.app { display: grid; grid-template-columns: 380px 1fr; gap: 16px; padding: 16px; }
+.panel { background: white; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.field { margin-bottom: 10px; }
+.row { display: flex; gap: 8px; }
+input { width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px; }
+button { padding: 8px 10px; border-radius: 6px; border: 1px solid #9ca3af; background: #f9fafb; cursor: pointer; }
+.grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.checks { display: flex; gap: 12px; flex-wrap: wrap; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #e5e7eb; padding: 6px; text-align: left; font-size: 12px; }
