@@ -7,6 +7,7 @@ import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
 import type { CliOptions, RenamePlanItem } from '../types/index.js';
+import { samePhysicalPath } from '../core/pathSafety.js';
 
 interface GuiOptions {
   input: string;
@@ -26,7 +27,7 @@ interface GuiOptions {
 function normalizeOptions(options: GuiOptions): CliOptions {
   const inputFolder = path.resolve(options.input);
   const resolvedOutput = options.output ? path.resolve(options.output) : path.join(inputFolder, 'optimized');
-  const output = resolvedOutput === inputFolder ? path.join(inputFolder, 'optimized') : resolvedOutput;
+  const output = samePhysicalPath(resolvedOutput, inputFolder) ? path.join(inputFolder, 'optimized') : resolvedOutput;
 
   return {
     input: inputFolder,

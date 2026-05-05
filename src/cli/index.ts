@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { Command, CommanderError, InvalidArgumentError } from 'commander';
 import path from 'node:path';
-import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { access, readFile, stat } from 'node:fs/promises';
 import { discoverFiles } from '../core/fileDiscovery.js';
@@ -9,6 +8,7 @@ import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
 import type { CliOptions } from '../types/index.js';
+import { safeRealpath, samePhysicalPath } from '../core/pathSafety.js';
 
 async function findPackageJsonPath(startDir: string): Promise<string | null> {
   let current = path.resolve(startDir);
@@ -57,12 +57,6 @@ async function ensureInputFolder(inputFolder: string): Promise<void> {
 function bytesToMb(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
-
-function isSamePath(a: string, b: string): boolean {
-  return path.resolve(a) === path.resolve(b);
-}
-
-
 
 function parseIntegerOption(value: string, optionName: string): number {
   const num = Number(value);
@@ -119,7 +113,7 @@ export async function runCli(argv: string[]): Promise<number> {
     await ensureInputFolder(inputFolder);
 
     let outputFolder = raw.output ? path.resolve(raw.output) : path.join(inputFolder, 'optimized');
-    if (isSamePath(outputFolder, inputFolder)) {
+    if (samePhysicalPath(outputFolder, inputFolder)) {
       outputFolder = path.join(inputFolder, 'optimized');
     }
 
@@ -204,18 +198,6 @@ export async function runCli(argv: string[]): Promise<number> {
 
 export async function main(): Promise<void> {
   process.exitCode = await runCli(process.argv.slice(2));
-}
-
-function safeRealpath(filePath: string): string {
-  try {
-    return realpathSync.native(filePath);
-  } catch {
-    try {
-      return realpathSync(filePath);
-    } catch {
-      return path.resolve(filePath);
-    }
-  }
 }
 
 function isDirectRun(): boolean {
