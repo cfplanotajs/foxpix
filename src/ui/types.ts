@@ -1,5 +1,6 @@
 export interface GuiOptions {
-  input: string;
+  input?: string;
+  filePaths?: string[];
   output?: string;
   prefix?: string;
   pattern: string;

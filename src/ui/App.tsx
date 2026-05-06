@@ -8,7 +8,7 @@ import type { PreviewRow, GuiOptions, WorkflowPresetId } from './types.js';
 import type { ProcessingSummary } from '../types/index.js';
 import { workflowPresets } from '../core/presets.js';
 
-const defaults: GuiOptions = { input: '', output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, lossless: false, recursive: false, keepMetadata: false };
+const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, lossless: false, recursive: false, keepMetadata: false };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
 
 function toMessage(error: unknown): string { return error instanceof Error ? error.message : String(error); }
@@ -36,8 +36,17 @@ export default function App(): JSX.Element {
   const applyPreset = (preset: WorkflowPresetId): void => { setSelectedPreset(preset); if (preset === 'custom') return; setOptions((prev) => ({ ...prev, ...workflowPresets[preset] })); };
   const onOptionsChange = (next: GuiOptions): void => { setOptions(next); const base = selectedPreset === 'custom' ? null : workflowPresets[selectedPreset as Exclude<WorkflowPresetId, 'custom'>]; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
 
-  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setOptions((prev) => outputTouched ? { ...prev, input: picked } : { ...prev, input: picked, output: '' }); setStatus('Folder loaded. Click Preview to continue.'); };
+  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setOptions((prev) => outputTouched ? { ...prev, input: picked, filePaths: [] } : { ...prev, input: picked, filePaths: [], output: '' }); setStatus('Folder loaded. Click Preview to continue.'); };
   const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); } };
+
+  const pickFiles = async (): Promise<void> => {
+    if (!bridgeAvailable) return;
+    const picked = await window.foxpix.selectImageFiles();
+    if (!picked || picked.length === 0) return;
+    setOptions((prev) => ({ ...prev, filePaths: picked, input: undefined, output: outputTouched ? prev.output : '' }));
+    setStatus(`Selected files mode: ${picked.length} image file(s) chosen.`);
+  };
+
 
   const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(`Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
   const handleProcess = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Processing batch...'); try { const result = await window.foxpix.process({ ...options, output: options.output || undefined }); setSummary(result.summary); setManifestPath(result.manifestPath); setManifestCsvPath(result.manifestCsvPath); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(`Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`); } catch (error) { setStatus(`Processing failed: ${toMessage(error)}`); } finally { setBusy(false); } };
@@ -55,14 +64,22 @@ export default function App(): JSX.Element {
     setBusy(true);
     try {
       const resolved = await window.foxpix.resolveDroppedPath(file);
-      if (!resolved) {
-        setStatus('Please drop a folder, not individual files.');
-        return;
+      if (resolved) {
+        const result = await window.foxpix.preview({ ...options, input: resolved, filePaths: [], output: outputTouched ? options.output || undefined : undefined });
+        setPreviewRows(result.rows);
+        setOptions((prev) => ({ ...prev, input: resolved, filePaths: [], output: result.outputFolder }));
+        setStatus(`Preview ready (${result.total} files).`);
+      } else {
+        const filePath = await window.foxpix.resolveDroppedFilePath(file);
+        if (!filePath) {
+          setStatus('Please drop a supported image file or folder.');
+          return;
+        }
+        const result = await window.foxpix.preview({ ...options, input: undefined, filePaths: [filePath], output: outputTouched ? options.output || undefined : undefined });
+        setPreviewRows(result.rows);
+        setOptions((prev) => ({ ...prev, input: undefined, filePaths: [filePath], output: result.outputFolder }));
+        setStatus('Selected files mode: 1 image file dropped and previewed.');
       }
-      const result = await window.foxpix.preview({ ...options, input: resolved, output: outputTouched ? options.output || undefined : undefined });
-      setPreviewRows(result.rows);
-      setOptions((prev) => ({ ...prev, input: resolved, output: result.outputFolder }));
-      setStatus(`Preview ready (${result.total} files).`);
     } catch (error) {
       setStatus(`Drop preview failed: ${toMessage(error)}`);
     } finally {
@@ -73,12 +90,14 @@ export default function App(): JSX.Element {
   return (<main className="app">
     <section className="left">
       <div className="header"><h1>🦊 FoxPix</h1><div className="badges"><span className="pill">Local-only</span><span className="pill">Transparency-safe</span></div></div><p className="tagline">Batch rename, compress, and convert web assets.</p>
-      <FolderPicker input={options.input} output={outputDisplay} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
+      <FolderPicker input={options.input || ''} output={outputDisplay} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
+      <div className="actions"><button type="button" className="secondary" onClick={() => void pickFiles()} disabled={busy || !bridgeAvailable}>Choose Image File(s)</button></div>
+      <p className="hint">Folder mode: optimize every supported image in a folder. Selected files mode: optimize only the images you choose.</p>
       <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop an image folder here</strong><p>or choose a folder manually</p></div>
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
       <div className="actions">
-        <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)} className="secondary">Preview (dry run)</button>
-        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)} className="primary">Process</button>
+        <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="secondary">Preview (dry run)</button>
+        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="primary">Process</button>
         <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open folder failed: ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
     </section>

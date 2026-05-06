@@ -4,7 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stat } from 'node:fs/promises';
-import { discoverFiles } from '../core/fileDiscovery.js';
+import { discoverFiles, discoverFilesFromPaths } from '../core/fileDiscovery.js';
 import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
@@ -13,7 +13,8 @@ import type { CliOptions, RenamePlanItem } from '../types/index.js';
 import { samePhysicalPath } from '../core/pathSafety.js';
 
 interface GuiOptions {
-  input: string;
+  input?: string;
+  filePaths?: string[];
   output?: string;
   prefix?: string;
   pattern: string;
@@ -49,12 +50,15 @@ async function saveSettings(settings: StoredGuiSettings): Promise<void> {
 }
 
 function normalizeOptions(options: GuiOptions): CliOptions {
-  const inputFolder = path.resolve(options.input);
-  const resolvedOutput = options.output ? path.resolve(options.output) : path.join(inputFolder, 'optimized');
-  const output = samePhysicalPath(resolvedOutput, inputFolder) ? path.join(inputFolder, 'optimized') : resolvedOutput;
+  const hasFiles = Array.isArray(options.filePaths) && options.filePaths.length > 0;
+  const baseInput = hasFiles
+    ? path.dirname(path.resolve(options.filePaths?.[0] ?? '.'))
+    : path.resolve(options.input ?? '.');
+  const resolvedOutput = options.output ? path.resolve(options.output) : path.join(baseInput, 'optimized');
+  const output = samePhysicalPath(resolvedOutput, baseInput) ? path.join(baseInput, 'optimized') : resolvedOutput;
 
   return {
-    input: inputFolder,
+    input: baseInput,
     output,
     prefix: options.prefix,
     pattern: options.pattern,
@@ -132,9 +136,21 @@ app.whenReady().then(() => {
     return result.canceled ? null : result.filePaths[0] ?? null;
   });
 
+  ipcMain.handle('foxpix:selectImageFiles', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff', 'avif'] }]
+    });
+    return result.canceled ? [] : result.filePaths;
+  });
+
   ipcMain.handle('foxpix:preview', async (_event: unknown, rawOptions: GuiOptions) => {
     const options = normalizeOptions(rawOptions);
-    const discovered = await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive });
+    const discovered = rawOptions.filePaths && rawOptions.filePaths.length > 0
+      ? await discoverFilesFromPaths(rawOptions.filePaths)
+      : rawOptions.input
+        ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
+        : [];
     const plan = await buildRenamePlan({
       files: discovered,
       outputFolder: options.output,
@@ -163,7 +179,11 @@ app.whenReady().then(() => {
 
   ipcMain.handle('foxpix:process', async (_event: unknown, rawOptions: GuiOptions) => {
     const options = normalizeOptions(rawOptions);
-    const discovered = await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive });
+    const discovered = rawOptions.filePaths && rawOptions.filePaths.length > 0
+      ? await discoverFilesFromPaths(rawOptions.filePaths)
+      : rawOptions.input
+        ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
+        : [];
     const plan = await buildRenamePlan({
       files: discovered,
       outputFolder: options.output,

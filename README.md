@@ -189,3 +189,12 @@ Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or 
 4. Process.
 5. Open output folder.
 6. Upload optimized assets to the web/CDN.
+
+
+## Processing one-off additions
+
+1. Choose **Image File(s)** or drop image files into the app.
+2. Pick the same output folder as your project if needed.
+3. Click **Preview**.
+4. Click **Process**.
+5. Upload the new optimized WebP asset.

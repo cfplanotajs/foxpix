@@ -1,4 +1,4 @@
-import { readdir } from 'node:fs/promises';
+import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { slugify } from './slugify.js';
 import type { DiscoveredFile } from '../types/index.js';
@@ -59,4 +59,24 @@ export async function discoverFiles(options: DiscoverOptions): Promise<Discovere
 
   await walk(inputFolder);
   return files.sort((a, b) => naturalSort(a.relativePath, b.relativePath));
+}
+
+
+export async function discoverFilesFromPaths(filePaths: string[]): Promise<DiscoveredFile[]> {
+  const files: DiscoveredFile[] = [];
+  for (const raw of filePaths) {
+    const absolutePath = path.resolve(raw);
+    const extension = path.extname(absolutePath).toLowerCase();
+    if (!SUPPORTED_EXTENSIONS.has(extension)) continue;
+    const info = await stat(absolutePath).catch(() => null);
+    if (!info || !info.isFile()) continue;
+    files.push({
+      absolutePath,
+      relativePath: path.basename(absolutePath),
+      name: path.basename(absolutePath, extension),
+      extension,
+      folderName: slugify(path.basename(path.dirname(absolutePath)))
+    });
+  }
+  return files.sort((a, b) => naturalSort(a.absolutePath, b.absolutePath));
 }
