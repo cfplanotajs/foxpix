@@ -7,6 +7,7 @@ export interface GuiOptions {
   custom?: string;
   quality: number;
   alphaQuality: number;
+  effort: number;
   lossless: boolean;
   maxWidth?: number;
   maxHeight?: number;

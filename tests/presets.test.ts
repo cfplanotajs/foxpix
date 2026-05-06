@@ -5,5 +5,6 @@ describe('workflow presets', () => {
   it('defines web-safe original preset', () => {
     expect(workflowPresets['web-safe-original'].pattern).toBe('{name}');
     expect(workflowPresets['web-safe-original'].quality).toBe(85);
+    expect(workflowPresets['lossless-archive'].effort).toBe(6);
   });
 });

@@ -45,6 +45,7 @@ Options:
 - `--custom`
 - `--quality` (default: `85`)
 - `--alphaQuality` (default: `100`)
+- `--effort` (default: `4`, range `0..6`)
 - `--lossless` (default: `false`)
 - `--maxWidth`
 - `--maxHeight`
@@ -129,9 +130,11 @@ npm run build
 
 ## Recommended settings for web images
 
+WebP effort controls encoding speed/size tradeoff (0 fastest, 6 slower/smaller).
+
 - `quality: 85`
 - `alphaQuality: 100`
-- `effort: 4`
+- `effort: 4` (0 fastest, 6 smaller/slower)
 - `lossless: false`
 - `keepMetadata: false`
 

@@ -98,6 +98,7 @@ export async function runCli(argv: string[]): Promise<number> {
       .option('--custom <text>', 'Custom token value for {custom}')
       .option('--quality <number>', 'WebP quality (default: 85)', (v) => parseRangeOption(v, '--quality', 1, 100), 85)
       .option('--alphaQuality <number>', 'WebP alpha quality (default: 100)', (v) => parseRangeOption(v, '--alphaQuality', 0, 100), 100)
+      .option('--effort <number>', 'WebP effort 0–6 (0 fastest, 6 smallest/slowest; default: 4)', (v) => parseRangeOption(v, '--effort', 0, 6), 4)
       .option('--lossless', 'Enable lossless WebP', false)
       .option('--maxWidth <number>', 'Resize max width', (v) => parsePositiveIntegerOption(v, '--maxWidth'))
       .option('--maxHeight <number>', 'Resize max height', (v) => parsePositiveIntegerOption(v, '--maxHeight'))
@@ -127,6 +128,7 @@ export async function runCli(argv: string[]): Promise<number> {
       quality: raw.quality,
       alphaQuality: raw.alphaQuality,
       lossless: Boolean(raw.lossless),
+      effort: raw.effort,
       maxWidth: raw.maxWidth,
       maxHeight: raw.maxHeight,
       recursive: Boolean(raw.recursive),
@@ -152,7 +154,7 @@ export async function runCli(argv: string[]): Promise<number> {
     console.log(`Input folder: ${inputFolder}`);
     console.log(`Output folder: ${outputFolder}`);
     console.log(`Discovered images: ${discovered.length}`);
-    console.log(`Settings: quality=${options.quality}, alphaQuality=${options.alphaQuality}, lossless=${options.lossless}, recursive=${options.recursive}, keepMetadata=${options.keepMetadata}`);
+    console.log(`Settings: quality=${options.quality}, alphaQuality=${options.alphaQuality}, effort=${options.effort}, lossless=${options.lossless}, recursive=${options.recursive}, keepMetadata=${options.keepMetadata}`);
     console.log('Planned mappings:');
     for (const item of plan) {
       console.log(`- ${item.source.relativePath} -> ${item.outputFilename}`);

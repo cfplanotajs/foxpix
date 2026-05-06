@@ -22,12 +22,14 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
         pipeline = pipeline.keepMetadata();
       }
 
+      const effort = Number.isInteger(options.effort) && (options.effort ?? 0) >= 0 && (options.effort ?? 0) <= 6 ? options.effort : 4;
+
       await pipeline
         .webp({
           quality: options.quality,
           alphaQuality: options.alphaQuality,
           lossless: options.lossless,
-          effort: 4
+          effort
         })
         .toFile(item.outputPath);
 

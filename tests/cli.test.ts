@@ -138,6 +138,19 @@ describe('CLI exit codes', () => {
     errSpy.mockRestore();
   });
 
+  it('returns non-zero for invalid effort values', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const low = await runCli(['--effort', '-1', '--input', '/tmp']);
+    const high = await runCli(['--effort', '7', '--input', '/tmp']);
+    const notInt = await runCli(['--effort', '2.5', '--input', '/tmp']);
+    const bad = await runCli(['--effort', 'abc', '--input', '/tmp']);
+    expect(low).not.toBe(0);
+    expect(high).not.toBe(0);
+    expect(notInt).not.toBe(0);
+    expect(bad).not.toBe(0);
+    errSpy.mockRestore();
+  });
+
   it('returns non-zero for invalid maxWidth and maxHeight', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const widthCode = await runCli(['--maxWidth', '0', '--input', '/tmp']);

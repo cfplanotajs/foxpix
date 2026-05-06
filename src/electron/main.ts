@@ -22,6 +22,7 @@ interface GuiOptions {
   quality: number;
   alphaQuality: number;
   lossless: boolean;
+  effort: number;
   maxWidth?: number;
   maxHeight?: number;
   recursive: boolean;
@@ -66,6 +67,7 @@ function normalizeOptions(options: GuiOptions): CliOptions {
     quality: options.quality,
     alphaQuality: options.alphaQuality,
     lossless: options.lossless,
+    effort: Number.isInteger(options.effort) && options.effort >= 0 && options.effort <= 6 ? options.effort : 4,
     maxWidth: options.maxWidth,
     maxHeight: options.maxHeight,
     recursive: options.recursive,
