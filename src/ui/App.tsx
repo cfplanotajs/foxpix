@@ -26,7 +26,7 @@ export default function App(): JSX.Element {
   const [status, setStatus] = useState('Idle');
   const [dragOver, setDragOver] = useState(false);
   const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
-  const outputDisplay = useMemo(() => options.output || (options.input ? `${options.input}/optimized` : ''), [options.input, options.output]);
+  const outputDisplay = useMemo(() => options.output || '', [options.output]);
   const validationError = validateOptions(options);
   const bridgeError = bridgeAvailable ? null : bridgeMsg;
 
@@ -36,21 +36,38 @@ export default function App(): JSX.Element {
   const applyPreset = (preset: WorkflowPresetId): void => { setSelectedPreset(preset); if (preset === 'custom') return; setOptions((prev) => ({ ...prev, ...workflowPresets[preset] })); };
   const onOptionsChange = (next: GuiOptions): void => { setOptions(next); const base = selectedPreset === 'custom' ? null : workflowPresets[selectedPreset as Exclude<WorkflowPresetId, 'custom'>]; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
 
-  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setOptions((prev) => outputTouched ? { ...prev, input: picked } : { ...prev, input: picked, output: `${picked}/optimized` }); setStatus('Folder loaded. Click Preview to continue.'); };
+  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setOptions((prev) => outputTouched ? { ...prev, input: picked } : { ...prev, input: picked, output: '' }); setStatus('Folder loaded. Click Preview to continue.'); };
   const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); } };
 
-  const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setStatus(`Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
-  const handleProcess = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Processing batch...'); try { const result = await window.foxpix.process({ ...options, output: options.output || undefined }); setSummary(result.summary); setManifestPath(result.manifestPath); setManifestCsvPath(result.manifestCsvPath); setStatus(`Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`); } catch (error) { setStatus(`Processing failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+  const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(`Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+  const handleProcess = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Processing batch...'); try { const result = await window.foxpix.process({ ...options, output: options.output || undefined }); setSummary(result.summary); setManifestPath(result.manifestPath); setManifestCsvPath(result.manifestCsvPath); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(`Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`); } catch (error) { setStatus(`Processing failed: ${toMessage(error)}`); } finally { setBusy(false); } };
 
   const onDrop = async (event: React.DragEvent<HTMLDivElement>): Promise<void> => {
-    event.preventDefault(); setDragOver(false);
-    const file = event.dataTransfer.files?.[0]; if (!file) return;
-    if (!bridgeAvailable) return void setStatus(bridgeMsg);
-    const resolved = await window.foxpix.resolveDroppedPath(file); if (!resolved) return void setStatus('Please drop a folder, not individual files.');
-    const preview = await window.foxpix.preview({ ...options, input: resolved, output: outputTouched ? options.output || undefined : `${resolved}/optimized` });
-    if (!preview) return;
-    setOptions((prev) => outputTouched ? { ...prev, input: resolved } : { ...prev, input: resolved, output: `${resolved}/optimized` });
-    setStatus('Folder loaded. Click Preview to continue.');
+    event.preventDefault();
+    setDragOver(false);
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!bridgeAvailable) {
+      setStatus(bridgeMsg);
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const resolved = await window.foxpix.resolveDroppedPath(file);
+      if (!resolved) {
+        setStatus('Please drop a folder, not individual files.');
+        return;
+      }
+      const result = await window.foxpix.preview({ ...options, input: resolved, output: outputTouched ? options.output || undefined : undefined });
+      setPreviewRows(result.rows);
+      setOptions((prev) => ({ ...prev, input: resolved, output: result.outputFolder }));
+      setStatus(`Preview ready (${result.total} files).`);
+    } catch (error) {
+      setStatus(`Drop preview failed: ${toMessage(error)}`);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (<main className="app">

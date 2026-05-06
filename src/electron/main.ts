@@ -179,7 +179,8 @@ app.whenReady().then(() => {
     return {
       summary,
       manifestPath,
-      manifestCsvPath
+      manifestCsvPath,
+      outputFolder: options.output
     };
   });
 
