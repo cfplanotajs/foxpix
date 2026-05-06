@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -76,6 +76,11 @@ describe('CLI exit codes', () => {
     const code = await runCli(['--input', input, '--prefix', 'test']);
 
     expect(code).toBe(0);
+    const outputDir = path.join(input, 'optimized');
+    expect(existsSync(path.join(outputDir, 'manifest.json'))).toBe(true);
+    const csvPath = path.join(outputDir, 'manifest.csv');
+    expect(existsSync(csvPath)).toBe(true);
+    expect(readFileSync(csvPath, 'utf8').split('\n')[0]).toContain('originalFilename');
 
     logSpy.mockRestore();
   });
@@ -91,6 +96,9 @@ describe('CLI exit codes', () => {
     const code = await runCli(['--input', input, '--prefix', 'test', '--dryRun']);
 
     expect(code).toBe(0);
+    const outputDir = path.join(input, 'optimized');
+    expect(existsSync(path.join(outputDir, 'manifest.json'))).toBe(false);
+    expect(existsSync(path.join(outputDir, 'manifest.csv'))).toBe(false);
 
     logSpy.mockRestore();
   });

@@ -7,6 +7,7 @@ import { discoverFiles } from '../core/fileDiscovery.js';
 import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
+import { writeManifestCsv } from '../core/manifestCsv.js';
 import type { CliOptions } from '../types/index.js';
 import { safeRealpath, samePhysicalPath } from '../core/pathSafety.js';
 
@@ -166,6 +167,7 @@ export async function runCli(argv: string[]): Promise<number> {
     const summary = await processImages(plan, options);
     const manifest = createManifest(options, summary);
     const manifestPath = await writeManifest(outputFolder, manifest);
+    const manifestCsvPath = await writeManifestCsv(outputFolder, summary.files);
 
     console.log(`Processed: ${summary.processed}`);
     console.log(`Succeeded: ${summary.succeeded}`);
@@ -174,7 +176,8 @@ export async function runCli(argv: string[]): Promise<number> {
     console.log(`Total output bytes: ${summary.outputBytes} (${bytesToMb(summary.outputBytes)})`);
     console.log(`Total saved bytes: ${summary.savedBytes} (${bytesToMb(summary.savedBytes)})`);
     console.log(`Saved: ${summary.savedPercent}%`);
-    console.log(`Manifest: ${manifestPath}`);
+    console.log(`Manifest JSON: ${manifestPath}`);
+    console.log(`Manifest CSV: ${manifestCsvPath}`);
 
     if (summary.failed > 0) {
       console.log('Command completed with failures. Exiting with status code 1 for automation safety.');

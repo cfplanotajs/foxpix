@@ -28,6 +28,8 @@ npm run test
 
 ## CLI usage
 
+CLI processing writes both `manifest.json` and `manifest.csv` in the output folder (dry-run writes neither).
+
 ```bash
 npm run optimize -- --input ./input [options]
 npm run optimize -- --help
