@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
+import { stat } from 'node:fs/promises';
 
 contextBridge.exposeInMainWorld('foxpix', {
   selectInputFolder: () => ipcRenderer.invoke('foxpix:selectInputFolder') as Promise<string | null>,
@@ -8,9 +9,15 @@ contextBridge.exposeInMainWorld('foxpix', {
   openFolder: (folderPath: string) => ipcRenderer.invoke('foxpix:openFolder', folderPath) as Promise<{ ok: true } | { ok: false; error: string }>,
   loadSettings: () => ipcRenderer.invoke('foxpix:loadSettings'),
   saveSettings: (settings: unknown) => ipcRenderer.invoke('foxpix:saveSettings', settings),
-  resolveDroppedPath: (file: File) => {
+  resolveDroppedPath: async (file: File) => {
     const resolved = webUtils.getPathForFile(file);
-    return Promise.resolve(resolved || null);
+    if (!resolved) return null;
+    try {
+      const info = await stat(resolved);
+      return info.isDirectory() ? resolved : null;
+    } catch {
+      return null;
+    }
   }
 });
 
