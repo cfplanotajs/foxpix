@@ -18,7 +18,7 @@ function exampleName(options: GuiOptions): string {
 }
 
 export default function SettingsPanel({ options, onChange, disabled, selectedPreset, onPresetChange }: SettingsPanelProps): JSX.Element {
-  return (<section className="panel"><h2>Settings</h2><div className="grid">
+  return (<section className="panel"><h2>Settings</h2><p className="hint">{`{name}`} = original filename made web-safe.</p><div className="grid">
     <label>Preset<select disabled={disabled} value={selectedPreset} onChange={(e) => onPresetChange(e.target.value as WorkflowPresetId)}>
       <option value="web-safe-original">Web-safe original names</option><option value="shopify-transparent">Shopify transparent assets</option><option value="product-listing">Product listing images</option><option value="tiny-web">Tiny web assets</option><option value="lossless-archive">Lossless archive</option><option value="custom">Custom</option>
     </select></label>
@@ -29,5 +29,5 @@ export default function SettingsPanel({ options, onChange, disabled, selectedPre
     <label>Alpha quality<input disabled={disabled} type="number" min={0} max={100} step={1} value={options.alphaQuality} onChange={(e) => onChange({ ...options, alphaQuality: Number(e.target.value) })} /></label>
     <label>Max width<input disabled={disabled} type="number" min={1} step={1} value={options.maxWidth ?? ''} onChange={(e) => onChange({ ...options, maxWidth: e.target.value ? Number(e.target.value) : undefined })} /></label>
     <label>Max height<input disabled={disabled} type="number" min={1} step={1} value={options.maxHeight ?? ''} onChange={(e) => onChange({ ...options, maxHeight: e.target.value ? Number(e.target.value) : undefined })} /></label>
-  </div><p>Example: "My Cute Animal.png" → "{exampleName(options)}"</p><div className="checks"><label><input disabled={disabled} type="checkbox" checked={options.recursive} onChange={(e) => onChange({ ...options, recursive: e.target.checked })} /> Recursive</label><label><input disabled={disabled} type="checkbox" checked={options.lossless} onChange={(e) => onChange({ ...options, lossless: e.target.checked })} /> Lossless</label><label><input disabled={disabled} type="checkbox" checked={options.keepMetadata} onChange={(e) => onChange({ ...options, keepMetadata: e.target.checked })} /> Keep metadata</label></div></section>);
+  </div><p className="hint">Example: "My Cute Animal.png" → "{exampleName(options)}"</p><p className="hint">Preview checks names before writing files. Process converts images and writes manifests.</p><div className="checks"><label><input disabled={disabled} type="checkbox" checked={options.recursive} onChange={(e) => onChange({ ...options, recursive: e.target.checked })} /> Recursive</label><label><input disabled={disabled} type="checkbox" checked={options.lossless} onChange={(e) => onChange({ ...options, lossless: e.target.checked })} /> Lossless</label><label><input disabled={disabled} type="checkbox" checked={options.keepMetadata} onChange={(e) => onChange({ ...options, keepMetadata: e.target.checked })} /> Keep metadata</label></div></section>);
 }

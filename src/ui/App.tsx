@@ -72,14 +72,14 @@ export default function App(): JSX.Element {
 
   return (<main className="app">
     <section className="left">
-      <h1>FoxPix</h1><p className="tagline">Batch rename, compress, and convert web assets.</p>
+      <div className="header"><h1>🦊 FoxPix</h1><div className="badges"><span className="pill">Local-only</span><span className="pill">Transparency-safe</span></div></div><p className="tagline">Batch rename, compress, and convert web assets.</p>
       <FolderPicker input={options.input} output={outputDisplay} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
-      <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop folder here</strong><p>Drag a folder to set input quickly.</p></div>
+      <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop an image folder here</strong><p>or choose a folder manually</p></div>
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
       <div className="actions">
-        <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)}>Preview (dry run)</button>
-        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)}>Process</button>
-        <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open folder failed: ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay}>Open output folder</button>
+        <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)} className="secondary">Preview (dry run)</button>
+        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !options.input || Boolean(validationError)} className="primary">Process</button>
+        <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open folder failed: ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
     </section>
     <section className="right">

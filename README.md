@@ -179,3 +179,13 @@ npm run start:gui
 
 Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or remote processing.
 
+
+
+## Team workflow
+
+1. Drop or choose a folder.
+2. Pick a preset.
+3. Preview names.
+4. Process.
+5. Open output folder.
+6. Upload optimized assets to the web/CDN.
