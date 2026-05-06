@@ -13,7 +13,6 @@ export function createManifest(options: CliOptions, summary: ProcessingSummary):
       custom: options.custom,
       quality: options.quality,
       alphaQuality: options.alphaQuality,
-      effort: options.effort,
       lossless: options.lossless,
       maxWidth: options.maxWidth,
       maxHeight: options.maxHeight,

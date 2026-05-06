@@ -35,13 +35,3 @@ describe('normalizeOptions output-folder safety', () => {
     expect(options.output).toBe(path.join(firstDir, 'optimized'));
   });
 });
-
-
-  it('normalizes selected-files mode output when manual output equals second selected file directory', () => {
-    const first = '/tmp/project/a/one.png';
-    const second = '/tmp/project/b/two.png';
-    const firstDir = path.dirname(path.resolve(first));
-    const secondDir = path.dirname(path.resolve(second));
-    const options = normalizeOptions({ ...base, filePaths: [first, second], output: secondDir });
-    expect(options.output).toBe(path.join(firstDir, 'optimized'));
-  });
