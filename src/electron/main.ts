@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import { existsSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stat } from 'node:fs/promises';
@@ -7,6 +8,7 @@ import { discoverFiles } from '../core/fileDiscovery.js';
 import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
+import { writeManifestCsv } from '../core/manifestCsv.js';
 import type { CliOptions, RenamePlanItem } from '../types/index.js';
 import { samePhysicalPath } from '../core/pathSafety.js';
 
@@ -23,6 +25,27 @@ interface GuiOptions {
   maxHeight?: number;
   recursive: boolean;
   keepMetadata: boolean;
+}
+
+
+interface StoredGuiSettings extends Partial<GuiOptions> {
+  outputTouched?: boolean;
+  selectedPreset?: string;
+}
+
+async function readSettings(): Promise<StoredGuiSettings | null> {
+  const settingsPath = path.join(app.getPath('userData'), 'foxpix-settings.json');
+  try {
+    const raw = await readFile(settingsPath, 'utf8');
+    return JSON.parse(raw) as StoredGuiSettings;
+  } catch {
+    return null;
+  }
+}
+
+async function saveSettings(settings: StoredGuiSettings): Promise<void> {
+  const settingsPath = path.join(app.getPath('userData'), 'foxpix-settings.json');
+  await writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
 }
 
 function normalizeOptions(options: GuiOptions): CliOptions {
@@ -151,11 +174,24 @@ app.whenReady().then(() => {
     const summary = await processImages(plan, options);
     const manifest = createManifest(options, summary);
     const manifestPath = await writeManifest(options.output, manifest);
+    const manifestCsvPath = await writeManifestCsv(options.output, summary.files);
 
     return {
       summary,
-      manifestPath
+      manifestPath,
+      manifestCsvPath
     };
+  });
+
+  ipcMain.handle('foxpix:loadSettings', async () => readSettings());
+
+  ipcMain.handle('foxpix:saveSettings', async (_event: unknown, settings: StoredGuiSettings) => {
+    try {
+      await saveSettings(settings);
+      return { ok: true as const };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
   });
 
   ipcMain.handle('foxpix:openFolder', async (_event: unknown, folderPath: string) => {

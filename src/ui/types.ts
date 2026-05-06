@@ -19,3 +19,5 @@ export interface PreviewRow {
   originalSize: number;
   status: 'planned';
 }
+
+export type WorkflowPresetId = 'custom' | 'web-safe-original' | 'shopify-transparent' | 'product-listing' | 'tiny-web' | 'lossless-archive';

@@ -1,6 +1,6 @@
 # Foxpix CLI
 
-A lightweight local TypeScript + Node.js batch image optimizer for web-production workflows. It bulk-renames files, converts to WebP, preserves transparency, and writes a `manifest.json` report.
+A lightweight local TypeScript + Node.js batch image optimizer for web-production workflows. It bulk-renames files, converts to WebP, preserves transparency, and writes `manifest.json` and `manifest.csv` reports.
 
 ## Installation
 
@@ -171,7 +171,10 @@ npm run start:gui
 2. Select output folder (or use default `<input>/optimized`).
 3. Set prefix/pattern and compression settings.
 4. Click **Preview (dry run)** to review planned output names.
-5. Click **Process** to run conversion and write manifest.
+5. Optionally drag-and-drop a folder into the drop zone to set input quickly.
+6. Pick a built-in workflow preset or custom settings.
+7. Click **Process** to run conversion and write manifest files (`manifest.json`, `manifest.csv`).
+8. Settings are remembered between app launches.
 6. Review summary and failed-file messages, then open output folder.
 
 Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or remote processing.
