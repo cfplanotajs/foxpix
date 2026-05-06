@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Local batch image optimizer CLI for web-production workflows",
   "type": "module",
-  "main": "dist/cli/index.js",
+  "main": "dist-electron/electron/main.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -14,7 +14,10 @@
     "dev:renderer": "vite --host 127.0.0.1",
     "dev:gui": "npm run build:electron && concurrently -k \"npm run dev:renderer\" \"wait-on http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron dist-electron/electron/main.js\"",
     "build:gui": "vite build && npm run build:electron",
-    "start:gui": "electron dist-electron/electron/main.js"
+    "start:gui": "electron dist-electron/electron/main.js",
+    "package": "npm run build:gui && electron-builder --dir",
+    "package:dir": "npm run build:gui && electron-builder --dir",
+    "package:win": "npm run build:gui && electron-builder --win portable"
   },
   "bin": {
     "foxpix": "dist/cli/index.js"
@@ -40,6 +43,30 @@
     "typescript": "^5.7.2",
     "vite": "^6.0.1",
     "vitest": "^3.2.4",
-    "wait-on": "^8.0.2"
+    "wait-on": "^8.0.2",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.cleverfox.foxpix",
+    "productName": "FoxPix",
+    "directories": {
+      "output": "dist-release"
+    },
+    "files": [
+      "dist-ui/**/*",
+      "dist-electron/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
   }
 }

@@ -198,3 +198,34 @@ Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or 
 3. Click **Preview**.
 4. Click **Process**.
 5. Upload the new optimized WebP asset.
+
+
+## Team handoff packaging
+
+### Dev GUI
+
+```bash
+npm run dev:gui
+```
+
+### Build GUI
+
+```bash
+npm run build:gui
+```
+
+### Create packaged build
+
+```bash
+npm run package:dir
+# or Windows portable
+npm run package:win
+```
+
+Packaged output is written to `dist-release/`.
+
+### Packaged app troubleshooting
+
+- If the app launches but processing fails, ensure the packaged build includes native Sharp modules (configured via `asarUnpack`).
+- If antivirus blocks portable binaries, run from a trusted local folder.
+- All processing is local-only; FoxPix does not upload images anywhere.
