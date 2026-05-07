@@ -39,16 +39,20 @@ function createWindow(): void {
   const __dirname = path.dirname(__filename);
 
   const preloadPath = path.resolve(__dirname, 'preload.cjs');
+  const preloadExists = existsSync(preloadPath);
   if (process.env.VITE_DEV_SERVER_URL) {
     console.log('[foxpix] preload path', preloadPath);
-    console.log('[foxpix] preload exists', existsSync(preloadPath));
+    console.log('[foxpix] preload exists', preloadExists);
+  }
+  if (!preloadExists) {
+    console.error('[foxpix] preload script missing', preloadPath);
   }
 
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.resolve(__dirname, 'preload.cjs'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false
     }

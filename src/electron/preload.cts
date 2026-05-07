@@ -1,6 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { stat } from 'node:fs/promises';
-import { resolveDroppedItems as resolveDroppedItemsCore } from './droppedItems.js';
 
 contextBridge.exposeInMainWorld('foxpix', {
   selectInputFolder: () => ipcRenderer.invoke('foxpix:selectInputFolder') as Promise<string | null>,
@@ -23,7 +22,8 @@ contextBridge.exposeInMainWorld('foxpix', {
   },
   resolveDroppedItems: async (files: File[]) => {
     const paths = files.map((file) => webUtils.getPathForFile(file)).filter((v): v is string => Boolean(v));
-    return resolveDroppedItemsCore(paths);
+    const { resolveDroppedItems } = await import('./droppedItems.js');
+    return resolveDroppedItems(paths);
   },
   resolveDroppedFilePath: async (file: File) => {
     const resolved = webUtils.getPathForFile(file);
