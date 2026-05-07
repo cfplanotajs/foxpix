@@ -205,67 +205,32 @@ Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or 
 5. Upload the new optimized WebP asset.
 
 
-## Team handoff / release build
+## Team handoff packaging
 
-This section is the handoff checklist for producing a repeatable internal release candidate.
-
-### 1) Install dependencies (lockfile expected)
+### Dev GUI
 
 ```bash
-npm install
+npm run dev:gui
 ```
 
-- This should create/update `package-lock.json`.
-- Commit lockfile updates for reproducible installs.
-
-### 2) Validate code and behavior
+### Build GUI
 
 ```bash
-npm run typecheck
-npm run test
-npm run build
 npm run build:gui
 ```
 
-### 3) Package desktop artifacts
+### Create packaged build
 
 ```bash
 npm run package:dir
-# Optional on Windows-capable environment
+# or Windows portable
 npm run package:win
 ```
 
-### 4) Artifact locations
+Packaged output is written to `dist-release/`.
 
-- Renderer build: `dist-ui/`
-- Electron main/preload build: `dist-electron/`
-- Packaged output: `dist-release/`
+### Packaged app troubleshooting
 
-### 5) Packaging/runtime expectations
-
-- `npm run start:gui` launches built Electron main from `dist-electron/electron/main.js`.
-- Production Electron loads `dist-ui/index.html` when `VITE_DEV_SERVER_URL` is not set.
-- Preload resolves from `dist-electron/electron/preload.cjs`.
-- `electron-builder` config targets `dist-release/`, includes required build output + runtime dependencies, and unpacks Sharp/native `@img` modules for runtime compatibility.
-
-### 6) Teammate manual QA checklist
-
-- [ ] Launch app.
-- [ ] Choose folder.
-- [ ] Choose image file(s).
-- [ ] Drag folder.
-- [ ] Drag multiple image files.
-- [ ] Preview.
-- [ ] Process.
-- [ ] Verify transparent WebP stays transparent.
-- [ ] Verify EXIF-rotated photo stays upright.
-- [ ] Verify web-safe names.
-- [ ] Verify `manifest.json` and `manifest.csv` exist.
-- [ ] Open output folder.
-- [ ] Restart app and confirm settings persist.
-
-### 7) Packaging troubleshooting
-
-- If packaging fails with `electron-builder: not found`, run `npm install` first and retry.
-- If packaged processing fails, verify native Sharp modules are present under unpacked app resources.
-- If antivirus blocks a portable build, run from a trusted local folder.
+- If the app launches but processing fails, ensure the packaged build includes native Sharp modules (configured via `asarUnpack`).
+- If antivirus blocks portable binaries, run from a trusted local folder.
+- All processing is local-only; FoxPix does not upload images anywhere.
