@@ -11,6 +11,7 @@ import { createManifest, writeManifest } from '../core/manifest.js';
 import { writeManifestCsv } from '../core/manifestCsv.js';
 import type { RenamePlanItem } from '../types/index.js';
 import { normalizeOptions, type GuiOptionsLike } from './normalizeOptions.js';
+import { resolveDroppedItems } from './droppedItems.js';
 
 type GuiOptions = GuiOptionsLike;
 
@@ -107,6 +108,8 @@ app.whenReady().then(() => {
     });
     return result.canceled ? [] : result.filePaths;
   });
+
+  ipcMain.handle('foxpix:resolveDroppedItems', async (_event: unknown, paths: string[]) => resolveDroppedItems(paths));
 
   ipcMain.handle('foxpix:preview', async (_event: unknown, rawOptions: GuiOptions) => {
     const options = normalizeOptions(rawOptions);

@@ -11,9 +11,7 @@ declare global {
       process: (options: GuiOptions) => Promise<{ summary: ProcessingSummary; manifestPath: string; manifestCsvPath: string; outputFolder: string }>;
       loadSettings: () => Promise<Partial<GuiOptions & { outputTouched: boolean; selectedPreset: string }> | null>;
       saveSettings: (settings: Partial<GuiOptions & { outputTouched: boolean; selectedPreset: string }>) => Promise<{ ok: true } | { ok: false; error: string }>;
-      resolveDroppedItems: (files: File[]) => Promise<{ kind: 'folder'; path: string } | { kind: 'files'; paths: string[] } | { kind: 'invalid'; error: string }>;
-      resolveDroppedPath: (file: File) => Promise<string | null>;
-      resolveDroppedFilePath: (file: File) => Promise<string | null>;
+      resolveDroppedItems: (files: File[] | FileList) => Promise<{ kind: 'folder'; path: string } | { kind: 'files'; paths: string[] } | { kind: 'invalid'; error: string }>;
       openFolder: (folderPath: string) => Promise<{ ok: true } | { ok: false; error: string }>; 
     };
   }

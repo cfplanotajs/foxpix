@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
-import { stat } from 'node:fs/promises';
 
 contextBridge.exposeInMainWorld('foxpix', {
   selectInputFolder: () => ipcRenderer.invoke('foxpix:selectInputFolder') as Promise<string | null>,
@@ -10,32 +9,11 @@ contextBridge.exposeInMainWorld('foxpix', {
   openFolder: (folderPath: string) => ipcRenderer.invoke('foxpix:openFolder', folderPath) as Promise<{ ok: true } | { ok: false; error: string }>,
   loadSettings: () => ipcRenderer.invoke('foxpix:loadSettings'),
   saveSettings: (settings: unknown) => ipcRenderer.invoke('foxpix:saveSettings', settings),
-  resolveDroppedPath: async (file: File) => {
-    const resolved = webUtils.getPathForFile(file);
-    if (!resolved) return null;
-    try {
-      const info = await stat(resolved);
-      return info.isDirectory() ? resolved : null;
-    } catch {
-      return null;
-    }
-  },
-  resolveDroppedItems: async (files: File[]) => {
-    const paths = files.map((file) => webUtils.getPathForFile(file)).filter((v): v is string => Boolean(v));
-    const { resolveDroppedItems } = await import('./droppedItems.js');
-    return resolveDroppedItems(paths);
-  },
-  resolveDroppedFilePath: async (file: File) => {
-    const resolved = webUtils.getPathForFile(file);
-    if (!resolved) return null;
-    try {
-      const info = await stat(resolved);
-      if (!info.isFile()) return null;
-      const ext = resolved.split('.').pop()?.toLowerCase();
-      return ext && ['png','jpg','jpeg','webp','tif','tiff','avif'].includes(ext) ? resolved : null;
-    } catch {
-      return null;
-    }
+  resolveDroppedItems: async (files: File[] | FileList) => {
+    const paths = Array.from(files)
+      .map((file) => webUtils.getPathForFile(file))
+      .filter((v): v is string => Boolean(v));
+    return ipcRenderer.invoke('foxpix:resolveDroppedItems', paths);
   }
 });
 
