@@ -9,26 +9,10 @@ import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
 import { writeManifestCsv } from '../core/manifestCsv.js';
-import type { CliOptions, RenamePlanItem } from '../types/index.js';
-import { samePhysicalPath } from '../core/pathSafety.js';
+import type { RenamePlanItem } from '../types/index.js';
+import { normalizeOptions, type GuiOptionsLike } from './normalizeOptions.js';
 
-interface GuiOptions {
-  input?: string;
-  filePaths?: string[];
-  output?: string;
-  prefix?: string;
-  pattern: string;
-  custom?: string;
-  quality: number;
-  alphaQuality: number;
-  lossless: boolean;
-  effort: number;
-  maxWidth?: number;
-  maxHeight?: number;
-  recursive: boolean;
-  keepMetadata: boolean;
-}
-
+type GuiOptions = GuiOptionsLike;
 
 interface StoredGuiSettings extends Partial<GuiOptions> {
   outputTouched?: boolean;
@@ -48,32 +32,6 @@ async function readSettings(): Promise<StoredGuiSettings | null> {
 async function saveSettings(settings: StoredGuiSettings): Promise<void> {
   const settingsPath = path.join(app.getPath('userData'), 'foxpix-settings.json');
   await writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-}
-
-function normalizeOptions(options: GuiOptions): CliOptions {
-  const hasFiles = Array.isArray(options.filePaths) && options.filePaths.length > 0;
-  const baseInput = hasFiles
-    ? path.dirname(path.resolve(options.filePaths?.[0] ?? '.'))
-    : path.resolve(options.input ?? '.');
-  const resolvedOutput = options.output ? path.resolve(options.output) : path.join(baseInput, 'optimized');
-  const output = samePhysicalPath(resolvedOutput, baseInput) ? path.join(baseInput, 'optimized') : resolvedOutput;
-
-  return {
-    input: baseInput,
-    output,
-    prefix: options.prefix,
-    pattern: options.pattern,
-    custom: options.custom,
-    quality: options.quality,
-    alphaQuality: options.alphaQuality,
-    lossless: options.lossless,
-    effort: Number.isInteger(options.effort) && options.effort >= 0 && options.effort <= 6 ? options.effort : 4,
-    maxWidth: options.maxWidth,
-    maxHeight: options.maxHeight,
-    recursive: options.recursive,
-    dryRun: false,
-    keepMetadata: options.keepMetadata
-  };
 }
 
 function createWindow(): void {

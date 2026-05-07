@@ -54,8 +54,8 @@ export default function App(): JSX.Element {
   const onDrop = async (event: React.DragEvent<HTMLDivElement>): Promise<void> => {
     event.preventDefault();
     setDragOver(false);
-    const file = event.dataTransfer.files?.[0];
-    if (!file) return;
+    const dropped = Array.from(event.dataTransfer.files ?? []);
+    if (dropped.length === 0) return;
     if (!bridgeAvailable) {
       setStatus(bridgeMsg);
       return;
@@ -63,23 +63,24 @@ export default function App(): JSX.Element {
 
     setBusy(true);
     try {
-      const resolved = await window.foxpix.resolveDroppedPath(file);
-      if (resolved) {
-        const result = await window.foxpix.preview({ ...options, input: resolved, filePaths: [], output: outputTouched ? options.output || undefined : undefined });
-        setPreviewRows(result.rows);
-        setOptions((prev) => ({ ...prev, input: resolved, filePaths: [], output: result.outputFolder }));
-        setStatus(`Preview ready (${result.total} files).`);
-      } else {
-        const filePath = await window.foxpix.resolveDroppedFilePath(file);
-        if (!filePath) {
-          setStatus('Please drop a supported image file or folder.');
-          return;
-        }
-        const result = await window.foxpix.preview({ ...options, input: undefined, filePaths: [filePath], output: outputTouched ? options.output || undefined : undefined });
-        setPreviewRows(result.rows);
-        setOptions((prev) => ({ ...prev, input: undefined, filePaths: [filePath], output: result.outputFolder }));
-        setStatus('Selected files mode: 1 image file dropped and previewed.');
+      const resolved = await window.foxpix.resolveDroppedItems(dropped);
+      if (resolved.kind === 'invalid') {
+        setStatus(resolved.error);
+        return;
       }
+
+      if (resolved.kind === 'folder') {
+        const result = await window.foxpix.preview({ ...options, input: resolved.path, filePaths: [], output: outputTouched ? options.output || undefined : undefined });
+        setPreviewRows(result.rows);
+        setOptions((prev) => ({ ...prev, input: resolved.path, filePaths: [], output: result.outputFolder }));
+        setStatus(`Preview ready (${result.total} files).`);
+        return;
+      }
+
+      const result = await window.foxpix.preview({ ...options, input: undefined, filePaths: resolved.paths, output: outputTouched ? options.output || undefined : undefined });
+      setPreviewRows(result.rows);
+      setOptions((prev) => ({ ...prev, input: undefined, filePaths: resolved.paths, output: result.outputFolder }));
+      setStatus(`Preview ready (${result.total} selected files).`);
     } catch (error) {
       setStatus(`Drop preview failed: ${toMessage(error)}`);
     } finally {

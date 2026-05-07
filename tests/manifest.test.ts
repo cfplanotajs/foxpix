@@ -11,6 +11,7 @@ describe('manifest', () => {
     custom: undefined,
     quality: 85,
     alphaQuality: 100,
+    effort: 6,
     lossless: false,
     maxWidth: undefined,
     maxHeight: undefined,
@@ -38,6 +39,7 @@ describe('manifest', () => {
     expect(manifest.totals.discovered).toBe(2);
     expect(manifest.totals.savedPercent).toBe(40);
     expect(manifest.totals.failedOriginalBytes).toBe(200);
+    expect(manifest.settings.effort).toBe(6);
   });
 
   it('keeps failed item shape and compression percent', () => {

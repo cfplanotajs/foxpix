@@ -21,11 +21,19 @@ export interface GuiOptionsLike {
 
 export function normalizeOptions(options: GuiOptionsLike): CliOptions {
   const hasFiles = Array.isArray(options.filePaths) && options.filePaths.length > 0;
+  const selectedParentDirs = hasFiles
+    ? Array.from(new Set((options.filePaths ?? []).map((filePath) => path.dirname(path.resolve(filePath)))))
+    : [];
   const baseInput = hasFiles
-    ? path.dirname(path.resolve(options.filePaths?.[0] ?? '.'))
+    ? selectedParentDirs[0] ?? path.resolve('.')
     : path.resolve(options.input ?? '.');
   const resolvedOutput = options.output ? path.resolve(options.output) : path.join(baseInput, 'optimized');
-  const output = samePhysicalPath(resolvedOutput, baseInput) ? path.join(baseInput, 'optimized') : resolvedOutput;
+
+  const outputConflictsWithSource = hasFiles
+    ? selectedParentDirs.some((sourceParentDir) => samePhysicalPath(resolvedOutput, sourceParentDir))
+    : samePhysicalPath(resolvedOutput, baseInput);
+
+  const output = outputConflictsWithSource ? path.join(baseInput, 'optimized') : resolvedOutput;
 
   return {
     input: baseInput,
