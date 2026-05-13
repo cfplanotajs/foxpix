@@ -22,6 +22,11 @@ function slugifyOptional(value?: string): string {
   if (!value || value.trim().length === 0) {
     return '';
   }
+  const hasMeaningfulChars = /[a-z0-9]/i.test(value.normalize('NFKD'));
+  if (!hasMeaningfulChars) {
+    return '';
+  }
+
   return slugify(value);
 }
 
@@ -34,6 +39,11 @@ function createBaseName(file: DiscoveredFile, index: number, pattern: string, pr
     .replaceAll('{prefix}', basePrefix)
     .replaceAll('{folder}', file.folderName)
     .replaceAll('{custom}', slugifyOptional(custom));
+
+  const hasMeaningfulChars = /[a-z0-9]/i.test(resolved.normalize('NFKD'));
+  if (!hasMeaningfulChars) {
+    return `image-${withPadding(index)}`;
+  }
 
   return slugify(resolved);
 }

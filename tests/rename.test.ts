@@ -76,4 +76,10 @@ describe('rename plan', () => {
     expect(plan[0].outputFilename.endsWith('.jpg')).toBe(true);
     expect(plan[1].outputFilename.endsWith('.png')).toBe(true);
   });
+
+  it('falls back to image-index when pattern resolves to empty slug', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-'));
+    const plan = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{custom}', custom: '***' });
+    expect(plan[0].outputFilename).toBe('image-001.webp');
+  });
 });
