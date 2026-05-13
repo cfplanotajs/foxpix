@@ -1,0 +1,73 @@
+{
+  "name": "foxpix",
+  "version": "0.1.0",
+  "description": "Local desktop and CLI batch image optimizer for web-production workflows",
+  "type": "module",
+  "main": "dist-electron/electron/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "optimize": "tsx src/cli/index.ts",
+    "create-samples": "tsx scripts/create-sample-images.ts",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "dev:renderer": "vite --host 127.0.0.1",
+    "dev:gui": "npm run build:electron && concurrently -k \"npm run dev:renderer\" \"wait-on http://127.0.0.1:5173 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron dist-electron/electron/main.js\"",
+    "build:gui": "vite build && npm run build:electron",
+    "start:gui": "electron dist-electron/electron/main.js",
+    "package": "npm run build:gui && electron-builder --dir",
+    "package:dir": "npm run build:gui && electron-builder --dir",
+    "package:win": "npm run build:gui && electron-builder --win portable"
+  },
+  "bin": {
+    "foxpix": "dist/cli/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "sharp": "^0.33.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^41.3.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.1",
+    "vitest": "^3.2.4",
+    "wait-on": "^8.0.2",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.cleverfox.foxpix",
+    "productName": "FoxPix",
+    "directories": {
+      "output": "dist-release"
+    },
+    "files": [
+      "dist-ui/**/*",
+      "dist-electron/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
+  },
+  "author": "FoxPix Team <team@example.com>"
+}
