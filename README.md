@@ -207,6 +207,13 @@ npm run start:gui
 - Skipped rows are not estimated or processed.
 - JPEG does not support transparency; transparent JPEG-target rows fail individually with a clear message.
 
+### Review controls
+
+- Use Preview filters (**All / Included / Skipped / Overrides / Warnings / Errors**) to review large batches quickly.
+- Bulk format controls apply to **included rows only**.
+- Skipped rows are not processed.
+- Warning/error views help catch JPEG transparency issues before processing.
+
 ### GUI workflow
 
 1. Select input folder.
