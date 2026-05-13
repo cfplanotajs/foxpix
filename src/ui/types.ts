@@ -1,4 +1,5 @@
 import type { OutputFormat } from '../types/index.js';
+import type { CustomPreset } from './customPresets.js';
 
 export interface GuiOptions {
   input?: string;
@@ -23,6 +24,7 @@ export interface StoredGuiSettings extends Partial<GuiOptions> {
   selectedPreset?: string;
   recentInputs?: string[];
   recentOutputs?: string[];
+  customPresets?: CustomPreset[];
 }
 
 export interface PreviewRow {
@@ -40,4 +42,4 @@ export interface PreviewRow {
   status: 'planned' | 'estimated' | 'warning' | 'failed' | 'skipped';
 }
 
-export type WorkflowPresetId = 'custom' | 'web-safe-original' | 'shopify-transparent' | 'product-listing' | 'tiny-web' | 'lossless-archive';
+export type WorkflowPresetId = 'custom' | 'web-safe-original' | 'shopify-transparent' | 'product-listing' | 'tiny-web' | 'lossless-archive' | `custom:${string}`;

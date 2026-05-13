@@ -235,6 +235,13 @@ npm run start:gui
 - `Ctrl+E`: Estimate Sizes
 - `Ctrl+Enter`: Process Included
 - `Esc`: Clear Preview Studio preview
+
+### Custom presets
+
+- Save your current tuning as a **Custom preset** from the settings panel.
+- Presets include workflow settings (format, naming, quality, alpha quality, effort, resize, lossless, metadata, recursive).
+- Presets do **not** include source/output folders, selected files, preview rows, or per-row include/override state.
+- Custom presets are stored locally on this computer and can be renamed or deleted in-app.
 2. Select output folder (or use default `<input>/optimized`).
 3. Set prefix/pattern and compression settings.
 4. Click **Preview (dry run)** to review planned output names.

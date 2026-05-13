@@ -13,11 +13,13 @@ import { buildRecommendations, computeFormatMix } from './recommendations.js';
 import { clearRecentPaths, pushRecentPath } from './recentPaths.js';
 import { sanitizeRecentPaths } from './recentPaths.js';
 import { getActionAvailability } from './actionAvailability.js';
+import { deletePreset, renamePreset, sanitizeCustomPresets, savePreset, type CustomPreset } from './customPresets.js';
 
 const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false, outputFormat: DEFAULT_OUTPUT_FORMAT };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
 
 function toMessage(error: unknown): string { return error instanceof Error ? error.message : String(error); }
+function isBuiltInPreset(value: WorkflowPresetId): value is Exclude<WorkflowPresetId, 'custom' | `custom:${string}`> { return !value.startsWith('custom') && value !== 'custom'; }
 function validateOptions(options: GuiOptions): string | null { if (!Number.isInteger(options.quality) || options.quality < 1 || options.quality > 100) return 'Quality must be an integer between 1 and 100.'; if (!Number.isInteger(options.alphaQuality) || options.alphaQuality < 0 || options.alphaQuality > 100) return 'Alpha quality must be an integer between 0 and 100.'; if (!Number.isInteger(options.effort) || options.effort < 0 || options.effort > 6) return 'WebP effort must be an integer between 0 and 6.'; if (options.maxWidth !== undefined && (!Number.isInteger(options.maxWidth) || options.maxWidth < 1)) return 'Max width must be a positive integer when provided.'; if (options.maxHeight !== undefined && (!Number.isInteger(options.maxHeight) || options.maxHeight < 1)) return 'Max height must be a positive integer when provided.'; return null; }
 
 export default function App(): JSX.Element {
@@ -42,14 +44,15 @@ export default function App(): JSX.Element {
   const [recentInputs, setRecentInputs] = useState<string[]>([]);
   const [recentOutputs, setRecentOutputs] = useState<string[]>([]);
   const [showHelp, setShowHelp] = useState(false);
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>([]);
   const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
   const outputDisplay = useMemo(() => options.output || '', [options.output]);
   const validationError = validateOptions(options);
   const bridgeError = bridgeAvailable ? null : bridgeMsg;
   const mode: 'folder' | 'files' | 'none' = options.filePaths && options.filePaths.length > 0 ? 'files' : options.input ? 'folder' : 'none';
 
-  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved: StoredGuiSettings | null) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved, outputFormat: normalizeOutputFormat(saved.outputFormat) })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); setRecentInputs(sanitizeRecentPaths(saved.recentInputs)); setRecentOutputs(sanitizeRecentPaths(saved.recentOutputs)); }).catch(() => {}); }, [bridgeAvailable]);
-  useEffect(() => { if (!bridgeAvailable) return; const t = setTimeout(() => { void window.foxpix.saveSettings({ ...options, outputTouched, selectedPreset, recentInputs, recentOutputs }); }, 200); return () => clearTimeout(t); }, [bridgeAvailable, options, outputTouched, selectedPreset, recentInputs, recentOutputs]);
+  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved: StoredGuiSettings | null) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved, outputFormat: normalizeOutputFormat(saved.outputFormat) })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); setRecentInputs(sanitizeRecentPaths(saved.recentInputs)); setRecentOutputs(sanitizeRecentPaths(saved.recentOutputs)); setCustomPresets(sanitizeCustomPresets(saved.customPresets)); }).catch(() => {}); }, [bridgeAvailable]);
+  useEffect(() => { if (!bridgeAvailable) return; const t = setTimeout(() => { void window.foxpix.saveSettings({ ...options, outputTouched, selectedPreset, recentInputs, recentOutputs, customPresets }); }, 200); return () => clearTimeout(t); }, [bridgeAvailable, options, outputTouched, selectedPreset, recentInputs, recentOutputs, customPresets]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const t = e.target as HTMLElement | null;
@@ -82,7 +85,8 @@ export default function App(): JSX.Element {
     }).catch(() => {});
   }, [bridgeAvailable, previewRows, thumbnailMap]);
 
-  const applyPreset = (preset: WorkflowPresetId): void => { setSelectedPreset(preset); if (preset === 'custom') return; setOptions((prev) => ({ ...prev, ...workflowPresets[preset] })); };
+  const applyPreset = (preset: WorkflowPresetId): void => { setSelectedPreset(preset); if (!isBuiltInPreset(preset)) return; setOptions((prev) => ({ ...prev, ...workflowPresets[preset] })); setEstimateTotals(null); setStudioPreview(null); setStatus('Preset applied. Preview or Estimate Sizes again.'); };
+  const applyCustomPreset = (id: string): void => { const found = customPresets.find((p) => p.id === id); if (!found) return; setSelectedPreset(`custom:${id}` as WorkflowPresetId); setOptions((prev) => ({ ...prev, ...found.settings })); setEstimateTotals(null); setStudioPreview(null); setStatus('Preset applied. Preview or Estimate Sizes again.'); };
   const onOptionsChange = (next: GuiOptions): void => {
     if ((next.outputFormat ?? 'webp') !== (options.outputFormat ?? 'webp') && previewRows.length > 0) {
       setPreviewRows([]);
@@ -92,7 +96,7 @@ export default function App(): JSX.Element {
       setStudioPreview(null);
       setStatus('Settings changed. Preview or Estimate Sizes again before processing.');
     }
-    setOptions(next); const base = selectedPreset === 'custom' ? null : workflowPresets[selectedPreset as Exclude<WorkflowPresetId, 'custom'>]; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.effort !== (base.effort ?? next.effort) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
+    setOptions(next); const base = isBuiltInPreset(selectedPreset) ? workflowPresets[selectedPreset] : null; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.effort !== (base.effort ?? next.effort) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
 
   const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setRecentInputs((prev) => pushRecentPath(prev, picked)); setOptions((prev) => outputTouched ? { ...prev, input: picked, filePaths: [] } : { ...prev, input: picked, filePaths: [], output: '' }); setStatus('Folder selected. Click Preview to check output names.'); };
   const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setRecentOutputs((prev) => pushRecentPath(prev, picked)); setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); setStatus('Output folder selected.'); } };
@@ -153,7 +157,7 @@ export default function App(): JSX.Element {
       <FolderPicker input={options.input || ''} output={outputDisplay} mode={mode} selectedFileCount={options.filePaths?.length ?? 0} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
       <div className="actions"><button title="Ctrl+Shift+O" type="button" className="secondary" onClick={() => void pickFiles()} disabled={busy || !bridgeAvailable}>Choose Image File(s) <span className="status-chip">Ctrl+Shift+O</span></button></div>
       <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop a folder or multiple image files</strong><p>Drag a folder for folder mode, or drag supported files for selected-files mode.</p></div>
-      <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
+      <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} customPresets={customPresets} onCustomPresetSelect={applyCustomPreset} onSavePreset={(name) => { const result = savePreset(customPresets, name, options); setCustomPresets(result.presets); setSelectedPreset(`custom:${result.saved.id}` as WorkflowPresetId); setStatus('Preset saved.'); }} onRenamePreset={(id, name) => { setCustomPresets((prev) => renamePreset(prev, id, name)); setStatus('Preset renamed.'); }} onDeletePreset={(id) => { setCustomPresets((prev) => deletePreset(prev, id)); if (selectedPreset === (`custom:${id}` as WorkflowPresetId)) setSelectedPreset('custom'); setStatus('Preset deleted.'); }} />
       <div className="actions sticky-actions">
         <button title="Ctrl+P" type="button" onClick={() => void handlePreview()} disabled={!availability.preview.enabled} className="secondary">Preview <span className="status-chip">Ctrl+P</span></button>
         <button title="Ctrl+E" type="button" onClick={() => void handleEstimate()} disabled={!availability.estimate.enabled} className="secondary">Estimate Sizes <span className="status-chip">Ctrl+E</span></button>
