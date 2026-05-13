@@ -38,8 +38,13 @@ export interface DiscoveredFile {
 
 export interface RenamePlanItem {
   source: DiscoveredFile;
+  desiredOutputFilename?: string;
   outputFilename: string;
   outputPath: string;
+  wasRenamedForCollision?: boolean;
+  collisionReason?: 'batch-duplicate' | 'existing-output-file' | 'both';
+  collisionSuffix?: number;
+  outputAlreadyExists?: boolean;
   outputFormat?: OutputFormat;
 }
 

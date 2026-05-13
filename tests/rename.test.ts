@@ -82,4 +82,17 @@ describe('rename plan', () => {
     const plan = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{custom}', custom: '***' });
     expect(plan[0].outputFilename).toBe('image-001.webp');
   });
+
+  it('adds collision diagnostics for batch duplicates and existing files', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-'));
+    await writeFile(path.join(dir, 'sample-image.webp'), 'x', 'utf-8');
+    const a = { ...baseFile, absolutePath: '/tmp/a.png', relativePath: 'a.png', name: 'Sample Image' };
+    const b = { ...baseFile, absolutePath: '/tmp/b.png', relativePath: 'b.png', name: 'Sample Image' };
+    const plan = await buildRenamePlan({ files: [a, b], outputFolder: dir, pattern: '{name}' });
+    expect(plan[0].wasRenamedForCollision).toBe(true);
+    expect(plan[0].collisionReason).toBe('existing-output-file');
+    expect(plan[1].wasRenamedForCollision).toBe(true);
+    expect(plan[1].collisionReason).toBe('both');
+    expect(plan[1].desiredOutputFilename).toBe('sample-image.webp');
+  });
 });

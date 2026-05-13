@@ -3,8 +3,8 @@ import { buildRecommendations, computeFormatMix } from '../src/ui/recommendation
 import type { PreviewRow } from '../src/ui/types.js';
 
 const rows: PreviewRow[] = [
-  { id: '1', sourcePath: '/a', originalFilename: 'a.png', outputFilename: 'a.jpg', originalSize: 10, sourceFormat: 'png', targetFormat: 'jpeg', status: 'failed', error: 'JPEG does not support transparency' },
-  { id: '2', sourcePath: '/b', originalFilename: 'b.jpg', outputFilename: 'b.webp', originalSize: 10, sourceFormat: 'jpg', targetFormat: 'webp', status: 'estimated', estimatedSavedBytes: -2 }
+  { id: '1', sourcePath: '/a', originalFilename: 'a.png', outputFilename: 'a.jpg', originalSize: 10, sourceFormat: 'png', targetFormat: 'jpeg', status: 'failed', error: 'JPEG does not support transparency', wasRenamedForCollision: true, collisionReason: 'existing-output-file' },
+  { id: '2', sourcePath: '/b', originalFilename: 'b.jpg', outputFilename: 'b.webp', originalSize: 10, sourceFormat: 'jpg', targetFormat: 'webp', status: 'estimated', estimatedSavedBytes: -2, wasRenamedForCollision: true, collisionReason: 'batch-duplicate' }
 ];
 
 describe('recommendations', () => {
@@ -13,6 +13,8 @@ describe('recommendations', () => {
     expect(notes.some((n) => n.includes('transparent images'))).toBe(true);
     expect(notes.some((n) => n.includes('Estimate Sizes'))).toBe(true);
     expect(notes.some((n) => n.includes('larger'))).toBe(true);
+    expect(notes.some((n) => n.includes('adjusted'))).toBe(true);
+    expect(notes.some((n) => n.includes('safe suffixes'))).toBe(true);
   });
 
   it('computes format mix', () => {

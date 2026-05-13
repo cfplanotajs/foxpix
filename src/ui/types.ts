@@ -32,6 +32,11 @@ export interface PreviewRow {
   sourcePath: string;
   originalFilename: string;
   outputFilename: string;
+  desiredOutputFilename?: string;
+  wasRenamedForCollision?: boolean;
+  collisionReason?: 'batch-duplicate' | 'existing-output-file' | 'both';
+  collisionSuffix?: number;
+  outputAlreadyExists?: boolean;
   originalSize: number;
   sourceFormat: string;
   targetFormat: OutputFormat;

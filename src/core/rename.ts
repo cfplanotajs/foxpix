@@ -66,15 +66,21 @@ export async function buildRenamePlan(options: RenameOptions): Promise<RenamePla
     let attempt = 1;
     const outputFormat = normalizeOutputFormat(options.formatOverrides?.[file.absolutePath] ?? options.outputFormat);
     const ext = extensionForOutputFormat(outputFormat);
-    let filename = `${initial}.${ext}`;
+    const desiredFilename = `${initial}.${ext}`;
+    let filename = desiredFilename;
+    let hadBatchDuplicate = false;
+    let hadExistingOutput = false;
 
     while (used.has(filename) || (await fileExists(path.join(options.outputFolder, filename)))) {
+      if (used.has(filename)) hadBatchDuplicate = true;
+      if (await fileExists(path.join(options.outputFolder, filename))) hadExistingOutput = true;
       attempt += 1;
       filename = `${initial}-${attempt}.${ext}`;
     }
 
     used.add(filename);
-    plan.push({ source: file, outputFilename: filename, outputPath: path.join(options.outputFolder, filename), outputFormat });
+    const reason = hadBatchDuplicate && hadExistingOutput ? 'both' : hadBatchDuplicate ? 'batch-duplicate' : hadExistingOutput ? 'existing-output-file' : undefined;
+    plan.push({ source: file, desiredOutputFilename: desiredFilename, outputFilename: filename, outputPath: path.join(options.outputFolder, filename), outputFormat, wasRenamedForCollision: filename !== desiredFilename, collisionReason: reason, collisionSuffix: filename !== desiredFilename ? attempt : undefined, outputAlreadyExists: hadExistingOutput });
   }
 
   return plan;

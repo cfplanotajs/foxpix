@@ -169,6 +169,10 @@ export async function runCli(argv: string[]): Promise<number> {
     }
 
     if (options.dryRun) {
+      const renamedCount = plan.filter((p) => p.wasRenamedForCollision).length;
+      if (renamedCount > 0) {
+        console.log(`${renamedCount} output names adjusted to avoid collisions.`);
+      }
       console.log(`Total planned: ${plan.length}`);
       console.log('No files were written and no manifest was created.');
       return 0;

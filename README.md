@@ -243,6 +243,13 @@ npm run start:gui
 - Presets do **not** include source/output folders, selected files, preview rows, or per-row include/override state.
 - Custom presets are stored locally on this computer and can be renamed or deleted in-app.
 
+### Output preflight diagnostics
+
+- Preview checks planned output names and writes no files.
+- FoxPix prevents overwrites by adjusting conflicting names with safe suffixes (`-2`, `-3`, ...).
+- Conflicts can come from duplicate planned names in the current batch or existing files already in the output folder.
+- Use the **Renamed** review filter to inspect rows that were adjusted for safety before processing.
+
 ### Recommended usability workflow
 
 1. Add source (folder or selected files).

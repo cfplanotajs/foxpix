@@ -1,7 +1,7 @@
 import type { OutputFormat } from '../types/index.js';
 import type { PreviewRow } from './types.js';
 
-export type ReviewFilter = 'all' | 'included' | 'skipped' | 'overrides' | 'warnings' | 'errors' | 'not_estimated' | 'estimated_only' | 'larger' | 'estimate_failed';
+export type ReviewFilter = 'all' | 'included' | 'skipped' | 'overrides' | 'warnings' | 'errors' | 'renamed' | 'not_estimated' | 'estimated_only' | 'larger' | 'estimate_failed';
 export type EstimateState = 'not_estimated' | 'estimated' | 'failed' | 'larger' | 'skipped';
 
 export function classifyEstimateRow(row: PreviewRow, included: boolean): EstimateState {
@@ -33,6 +33,7 @@ export function filterPreviewRows(rows: PreviewRow[], filter: ReviewFilter, sear
     if (filter === 'overrides') return rowHasOverride(row, formatOverrides);
     if (filter === 'warnings') return getRowWarningState(row).warning;
     if (filter === 'errors') return getRowWarningState(row).error;
+    if (filter === 'renamed') return row.wasRenamedForCollision === true || row.outputAlreadyExists === true;
     const estimateState = classifyEstimateRow(row, included);
     if (filter === 'not_estimated') return estimateState === 'not_estimated';
     if (filter === 'estimated_only') return estimateState === 'estimated';
@@ -42,12 +43,13 @@ export function filterPreviewRows(rows: PreviewRow[], filter: ReviewFilter, sear
   });
 }
 
-export function computeReviewCounts(rows: PreviewRow[], includedMap: Record<string, boolean>, formatOverrides: Record<string, OutputFormat>): { total: number; included: number; skipped: number; overrides: number; warnings: number; errors: number } {
+export function computeReviewCounts(rows: PreviewRow[], includedMap: Record<string, boolean>, formatOverrides: Record<string, OutputFormat>): { total: number; included: number; skipped: number; overrides: number; warnings: number; errors: number; renamed: number } {
   const total = rows.length;
   const included = rows.filter((row) => includedMap[row.id] !== false).length;
   const skipped = total - included;
   const overrides = rows.filter((row) => rowHasOverride(row, formatOverrides)).length;
   const warnings = rows.filter((row) => getRowWarningState(row).warning).length;
   const errors = rows.filter((row) => getRowWarningState(row).error).length;
-  return { total, included, skipped, overrides, warnings, errors };
+  const renamed = rows.filter((row) => row.wasRenamedForCollision || row.outputAlreadyExists).length;
+  return { total, included, skipped, overrides, warnings, errors, renamed };
 }
