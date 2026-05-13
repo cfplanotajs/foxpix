@@ -231,6 +231,37 @@ describe('processImages integration', () => {
     expect(outputMeta.height).toBe(40);
   });
 
+
+
+  it('blocks transparent input when outputFormat is jpeg', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-jpeg-alpha-'));
+    const inputFile = path.join(dir, 'alpha.png');
+    const outputDir = path.join(dir, 'optimized');
+    const outputFile = path.join(outputDir, 'alpha-001.jpg');
+    await createTransparentPng(inputFile);
+    const discovered: DiscoveredFile = { absolutePath: inputFile, relativePath: 'alpha.png', name: 'alpha', extension: '.png', folderName: 'input' };
+    const plan: RenamePlanItem[] = [{ source: discovered, outputFilename: 'alpha-001.jpg', outputPath: outputFile }];
+    const options: CliOptions = { input: dir, output: outputDir, prefix: 'alpha', pattern: '{prefix}-{index}', quality: 85, alphaQuality: 100, lossless: false, recursive: false, dryRun: false, keepMetadata: false, outputFormat: 'jpeg' };
+    const summary = await processImages(plan, options);
+    expect(summary.failed).toBe(1);
+    expect(summary.files[0].error).toContain('JPEG does not support transparency');
+  });
+
+  it('supports png output format processing', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-png-out-'));
+    const inputFile = path.join(dir, 'alpha.png');
+    const outputDir = path.join(dir, 'optimized');
+    const outputFile = path.join(outputDir, 'alpha-001.png');
+    await createTransparentPng(inputFile);
+    const discovered: DiscoveredFile = { absolutePath: inputFile, relativePath: 'alpha.png', name: 'alpha', extension: '.png', folderName: 'input' };
+    const plan: RenamePlanItem[] = [{ source: discovered, outputFilename: 'alpha-001.png', outputPath: outputFile }];
+    const options: CliOptions = { input: dir, output: outputDir, prefix: 'alpha', pattern: '{prefix}-{index}', quality: 85, alphaQuality: 100, lossless: false, recursive: false, dryRun: false, keepMetadata: false, outputFormat: 'png' };
+    const summary = await processImages(plan, options);
+    expect(summary.succeeded).toBe(1);
+    const meta = await sharp(outputFile).metadata();
+    expect(meta.format).toBe('png');
+  });
+
   it('preserves metadata when keepMetadata is enabled', async () => {
     const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-meta-'));
     const inputFile = path.join(dir, 'meta.jpg');

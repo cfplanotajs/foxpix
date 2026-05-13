@@ -270,3 +270,15 @@ npm run package:win
 - If packaging fails with `electron-builder: not found`, run `npm install` first and retry.
 - If packaged processing fails, verify native Sharp modules are present under unpacked app resources.
 - If antivirus blocks a portable build, run from a trusted local folder.
+
+
+## Output formats
+
+CLI supports `--format webp|avif|jpeg|png` (default: `webp`).
+
+- WebP is the current default and recommended output format.
+- AVIF is supported in CLI processing for smaller/slower output tradeoffs.
+- JPEG does not support transparency; transparent files will fail with a readable error.
+- PNG output is transparency-safe and lossless-oriented.
+
+GUI format controls are planned for a later phase; current GUI default remains WebP.

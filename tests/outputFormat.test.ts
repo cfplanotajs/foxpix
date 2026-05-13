@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_OUTPUT_FORMAT, normalizeOutputFormat } from '../src/types/index.js';
+import { extensionForOutputFormat } from '../src/core/outputFormat.js';
 
 describe('output format compatibility defaults', () => {
   it('defaults undefined to webp', () => {
@@ -15,5 +16,13 @@ describe('output format compatibility defaults', () => {
 
   it('normalizes invalid values to webp', () => {
     expect(normalizeOutputFormat('bad')).toBe('webp');
+  });
+
+  it('maps output format extensions', () => {
+    expect(extensionForOutputFormat('webp')).toBe('webp');
+    expect(extensionForOutputFormat('avif')).toBe('avif');
+    expect(extensionForOutputFormat('jpeg')).toBe('jpg');
+    expect(extensionForOutputFormat('png')).toBe('png');
+    expect(extensionForOutputFormat(normalizeOutputFormat('bad'))).toBe('webp');
   });
 });

@@ -38,14 +38,28 @@ describe('rename plan', () => {
     expect(plan[0].outputFilename).toBe('sticker-001.webp');
   });
 
+
+
+  it('uses format extension for avif/jpeg/png', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-'));
+    const webp = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{name}', outputFormat: 'webp' });
+    const avif = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{name}', outputFormat: 'avif' });
+    const jpeg = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{name}', outputFormat: 'jpeg' });
+    const png = await buildRenamePlan({ files: [baseFile], outputFolder: dir, pattern: '{name}', outputFormat: 'png' });
+    expect(webp[0].outputFilename).toBe('sample-image.webp');
+    expect(avif[0].outputFilename).toBe('sample-image.avif');
+    expect(jpeg[0].outputFilename).toBe('sample-image.jpg');
+    expect(png[0].outputFilename).toBe('sample-image.png');
+  });
+
   it('handles duplicate filenames by suffix', async () => {
     const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-'));
-    await writeFile(path.join(dir, 'sample-image-001.webp'), 'existing', 'utf-8');
+    await writeFile(path.join(dir, 'sample-image-001.avif'), 'existing', 'utf-8');
 
     const secondFile: DiscoveredFile = { ...baseFile, absolutePath: '/tmp/second.png', relativePath: 'second.png', name: 'Sample Image' };
-    const plan = await buildRenamePlan({ files: [baseFile, secondFile], outputFolder: dir, pattern: '{name}-{index}' });
+    const plan = await buildRenamePlan({ files: [baseFile, secondFile], outputFolder: dir, pattern: '{name}-{index}', outputFormat: 'avif' });
 
-    expect(plan[0].outputFilename).toBe('sample-image-001-2.webp');
-    expect(plan[1].outputFilename).toBe('sample-image-002.webp');
+    expect(plan[0].outputFilename).toBe('sample-image-001-2.avif');
+    expect(plan[1].outputFilename).toBe('sample-image-002.avif');
   });
 });

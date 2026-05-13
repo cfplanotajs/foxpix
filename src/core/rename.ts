@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { access } from 'node:fs/promises';
 import { slugify } from './slugify.js';
-import type { DiscoveredFile, RenamePlanItem } from '../types/index.js';
+import { normalizeOutputFormat, type DiscoveredFile, type RenamePlanItem, type OutputFormat } from '../types/index.js';
+import { extensionForOutputFormat } from './outputFormat.js';
 
 export interface RenameOptions {
   files: DiscoveredFile[];
@@ -9,6 +10,7 @@ export interface RenameOptions {
   pattern: string;
   prefix?: string;
   custom?: string;
+  outputFormat?: OutputFormat;
 }
 
 function withPadding(index: number): string {
@@ -51,11 +53,12 @@ export async function buildRenamePlan(options: RenameOptions): Promise<RenamePla
   for (const [i, file] of options.files.entries()) {
     const initial = createBaseName(file, i + 1, options.pattern, options.prefix, options.custom);
     let attempt = 1;
-    let filename = `${initial}.webp`;
+    const ext = extensionForOutputFormat(normalizeOutputFormat(options.outputFormat));
+    let filename = `${initial}.${ext}`;
 
     while (used.has(filename) || (await fileExists(path.join(options.outputFolder, filename)))) {
       attempt += 1;
-      filename = `${initial}-${attempt}.webp`;
+      filename = `${initial}-${attempt}.${ext}`;
     }
 
     used.add(filename);

@@ -1,6 +1,12 @@
 import { mkdir, stat } from 'node:fs/promises';
 import sharp from 'sharp';
-import type { CliOptions, ProcessingSummary, RenamePlanItem, ProcessedFileResult } from '../types/index.js';
+import { normalizeOutputFormat, type CliOptions, type ProcessingSummary, type RenamePlanItem, type ProcessedFileResult } from '../types/index.js';
+
+
+
+function hasAlpha(meta: sharp.Metadata): boolean {
+  return Boolean(meta.hasAlpha || (typeof meta.channels === 'number' && meta.channels >= 4));
+}
 
 export async function processImages(plan: RenamePlanItem[], options: CliOptions): Promise<ProcessingSummary> {
   await mkdir(options.output, { recursive: true });
@@ -23,15 +29,22 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
       }
 
       const effort = Number.isInteger(options.effort) && (options.effort ?? 0) >= 0 && (options.effort ?? 0) <= 6 ? options.effort : 4;
+      const outputFormat = normalizeOutputFormat(options.outputFormat);
+      const sourceMetadata = await sharp(item.source.absolutePath, { failOn: 'none' }).metadata();
 
-      await pipeline
-        .webp({
-          quality: options.quality,
-          alphaQuality: options.alphaQuality,
-          lossless: options.lossless,
-          effort
-        })
-        .toFile(item.outputPath);
+      if (outputFormat === 'jpeg' && hasAlpha(sourceMetadata)) {
+        throw new Error('JPEG does not support transparency. Choose WebP, AVIF, or PNG for transparent assets.');
+      }
+
+      if (outputFormat === 'avif') {
+        await pipeline.avif({ quality: options.quality, effort }).toFile(item.outputPath);
+      } else if (outputFormat === 'jpeg') {
+        await pipeline.jpeg({ quality: options.quality }).toFile(item.outputPath);
+      } else if (outputFormat === 'png') {
+        await pipeline.png().toFile(item.outputPath);
+      } else {
+        await pipeline.webp({ quality: options.quality, alphaQuality: options.alphaQuality, lossless: options.lossless, effort }).toFile(item.outputPath);
+      }
 
       const originalStat = await stat(item.source.absolutePath);
       const outputStat = await stat(item.outputPath);

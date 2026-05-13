@@ -8,7 +8,7 @@ import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
 import { createManifest, writeManifest } from '../core/manifest.js';
 import { writeManifestCsv } from '../core/manifestCsv.js';
-import type { CliOptions } from '../types/index.js';
+import { normalizeOutputFormat, type CliOptions } from '../types/index.js';
 import { safeRealpath, samePhysicalPath } from '../core/pathSafety.js';
 
 async function findPackageJsonPath(startDir: string): Promise<string | null> {
@@ -105,6 +105,7 @@ export async function runCli(argv: string[]): Promise<number> {
       .option('--recursive', 'Recursively discover files', false)
       .option('--dryRun', 'Print planned mappings only', false)
       .option('--keepMetadata', 'Preserve metadata in output files', false)
+      .option('--format <format>', 'Output format: webp, avif, jpeg, png (default: webp)', 'webp')
       .allowExcessArguments(false)
       .exitOverride();
 
@@ -117,6 +118,11 @@ export async function runCli(argv: string[]): Promise<number> {
     let outputFolder = raw.output ? path.resolve(raw.output) : path.join(inputFolder, 'optimized');
     if (samePhysicalPath(outputFolder, inputFolder)) {
       outputFolder = path.join(inputFolder, 'optimized');
+    }
+
+    const normalizedFormat = normalizeOutputFormat(raw.format);
+    if (String(raw.format).toLowerCase() !== normalizedFormat && String(raw.format).toLowerCase() !== 'webp') {
+      throw new Error('Unsupported format. Use webp, avif, jpeg, or png.');
     }
 
     const options: CliOptions = {
@@ -133,7 +139,8 @@ export async function runCli(argv: string[]): Promise<number> {
       maxHeight: raw.maxHeight,
       recursive: Boolean(raw.recursive),
       dryRun: Boolean(raw.dryRun),
-      keepMetadata: Boolean(raw.keepMetadata)
+      keepMetadata: Boolean(raw.keepMetadata),
+      outputFormat: normalizedFormat
     };
 
     const discovered = await discoverFiles({ inputFolder, outputFolder, recursive: options.recursive });
@@ -147,14 +154,15 @@ export async function runCli(argv: string[]): Promise<number> {
       outputFolder,
       pattern: options.pattern,
       prefix: options.prefix,
-      custom: options.custom
+      custom: options.custom,
+      outputFormat: options.outputFormat
     });
 
     console.log(options.dryRun ? 'DRY RUN MODE (no files will be written)' : 'PROCESSING MODE');
     console.log(`Input folder: ${inputFolder}`);
     console.log(`Output folder: ${outputFolder}`);
     console.log(`Discovered images: ${discovered.length}`);
-    console.log(`Settings: quality=${options.quality}, alphaQuality=${options.alphaQuality}, effort=${options.effort}, lossless=${options.lossless}, recursive=${options.recursive}, keepMetadata=${options.keepMetadata}`);
+    console.log(`Settings: format=${options.outputFormat}, quality=${options.quality}, alphaQuality=${options.alphaQuality}, effort=${options.effort}, lossless=${options.lossless}, recursive=${options.recursive}, keepMetadata=${options.keepMetadata}`);
     console.log('Planned mappings:');
     for (const item of plan) {
       console.log(`- ${item.source.relativePath} -> ${item.outputFilename}`);

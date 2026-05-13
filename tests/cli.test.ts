@@ -124,6 +124,27 @@ describe('CLI exit codes', () => {
   });
 
 
+
+  it('supports --format png in dry-run mappings', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'foxpix-cli-format-'));
+    const input = path.join(root, 'input');
+    await mkdir(input, { recursive: true });
+    await createValidPng(path.join(input, 'good.png'));
+    const logs: string[] = [];
+    const logSpy = vi.spyOn(console, 'log').mockImplementation((...args) => { logs.push(args.join(' ')); });
+    const code = await runCli(['--input', input, '--prefix', 'test', '--format', 'png', '--dryRun']);
+    expect(code).toBe(0);
+    expect(logs.some((l) => l.includes('.png'))).toBe(true);
+    logSpy.mockRestore();
+  });
+
+  it('rejects invalid --format values', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const code = await runCli(['--input', '/tmp', '--format', 'bad']);
+    expect(code).toBe(1);
+    errSpy.mockRestore();
+  });
+
   it('returns non-zero for invalid quality', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const code = await runCli(['--quality', 'abc', '--input', '/tmp']);
