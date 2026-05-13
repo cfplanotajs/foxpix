@@ -1,3 +1,15 @@
+export type OutputFormat = 'webp' | 'avif' | 'jpeg' | 'png';
+
+export const DEFAULT_OUTPUT_FORMAT: OutputFormat = 'webp';
+
+export function isOutputFormat(value: unknown): value is OutputFormat {
+  return value === 'webp' || value === 'avif' || value === 'jpeg' || value === 'png';
+}
+
+export function normalizeOutputFormat(value: unknown): OutputFormat {
+  return isOutputFormat(value) ? value : DEFAULT_OUTPUT_FORMAT;
+}
+
 export interface CliOptions {
   input: string;
   output: string;
@@ -13,6 +25,7 @@ export interface CliOptions {
   recursive: boolean;
   dryRun: boolean;
   keepMetadata: boolean;
+  outputFormat?: OutputFormat;
 }
 
 export interface DiscoveredFile {

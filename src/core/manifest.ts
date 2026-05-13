@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { CliOptions, Manifest, ProcessingSummary } from '../types/index.js';
+import { normalizeOutputFormat, type CliOptions, type Manifest, type ProcessingSummary } from '../types/index.js';
 
 export function createManifest(options: CliOptions, summary: ProcessingSummary): Manifest {
   return {
@@ -18,7 +18,8 @@ export function createManifest(options: CliOptions, summary: ProcessingSummary):
       maxWidth: options.maxWidth,
       maxHeight: options.maxHeight,
       recursive: options.recursive,
-      keepMetadata: options.keepMetadata
+      keepMetadata: options.keepMetadata,
+      outputFormat: normalizeOutputFormat(options.outputFormat)
     },
     totals: {
       discovered: summary.discovered,

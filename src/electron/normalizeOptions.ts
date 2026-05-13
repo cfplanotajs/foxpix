@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type { CliOptions } from '../types/index.js';
+import { normalizeOutputFormat, type CliOptions } from '../types/index.js';
 import { samePhysicalPath } from '../core/pathSafety.js';
 
 export interface GuiOptionsLike {
@@ -17,6 +17,7 @@ export interface GuiOptionsLike {
   maxHeight?: number;
   recursive: boolean;
   keepMetadata: boolean;
+  outputFormat?: CliOptions['outputFormat'];
 }
 
 export function normalizeOptions(options: GuiOptionsLike): CliOptions {
@@ -49,6 +50,7 @@ export function normalizeOptions(options: GuiOptionsLike): CliOptions {
     maxHeight: options.maxHeight,
     recursive: options.recursive,
     dryRun: false,
-    keepMetadata: options.keepMetadata
+    keepMetadata: options.keepMetadata,
+    outputFormat: normalizeOutputFormat(options.outputFormat)
   };
 }

@@ -5,10 +5,10 @@ import PreviewTable from './components/PreviewTable.js';
 import SummaryPanel from './components/SummaryPanel.js';
 import ProgressPanel from './components/ProgressPanel.js';
 import type { PreviewRow, GuiOptions, WorkflowPresetId } from './types.js';
-import type { ProcessingSummary } from '../types/index.js';
+import { DEFAULT_OUTPUT_FORMAT, normalizeOutputFormat, type ProcessingSummary } from '../types/index.js';
 import { workflowPresets } from '../core/presets.js';
 
-const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false };
+const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false, outputFormat: DEFAULT_OUTPUT_FORMAT };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
 
 function toMessage(error: unknown): string { return error instanceof Error ? error.message : String(error); }
@@ -31,7 +31,7 @@ export default function App(): JSX.Element {
   const bridgeError = bridgeAvailable ? null : bridgeMsg;
   const mode: 'folder' | 'files' | 'none' = options.filePaths && options.filePaths.length > 0 ? 'files' : options.input ? 'folder' : 'none';
 
-  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); }).catch(() => {}); }, [bridgeAvailable]);
+  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved, outputFormat: normalizeOutputFormat(saved.outputFormat) })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); }).catch(() => {}); }, [bridgeAvailable]);
   useEffect(() => { if (!bridgeAvailable) return; const t = setTimeout(() => { void window.foxpix.saveSettings({ ...options, outputTouched, selectedPreset }); }, 200); return () => clearTimeout(t); }, [bridgeAvailable, options, outputTouched, selectedPreset]);
 
   const applyPreset = (preset: WorkflowPresetId): void => { setSelectedPreset(preset); if (preset === 'custom') return; setOptions((prev) => ({ ...prev, ...workflowPresets[preset] })); };

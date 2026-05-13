@@ -1,3 +1,5 @@
+import type { OutputFormat } from '../types/index.js';
+
 export interface GuiOptions {
   input?: string;
   filePaths?: string[];
@@ -13,6 +15,7 @@ export interface GuiOptions {
   maxHeight?: number;
   recursive: boolean;
   keepMetadata: boolean;
+  outputFormat?: OutputFormat;
 }
 
 export interface PreviewRow {
