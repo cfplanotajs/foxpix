@@ -24,14 +24,14 @@ export default function FolderPicker({ input, output, mode, selectedFileCount, o
         <label>Input folder</label>
         <div className="row">
           <input value={input} readOnly placeholder="Select input folder" />
-          <button type="button" onClick={onInputPick} disabled={disabled}>Browse folder</button>
+          <button title="Ctrl+O" type="button" onClick={onInputPick} disabled={disabled}>Choose Folder <span className="status-chip">Ctrl+O</span></button>
         </div>
       </div>
       <div className="field">
         <label>Output folder</label>
         <div className="row">
           <input value={output} readOnly placeholder="Defaults to <input>/optimized" />
-          <button type="button" onClick={onOutputPick} disabled={disabled}>Browse output</button>
+          <button type="button" onClick={onOutputPick} disabled={disabled}>Choose Output</button>
         </div>
       </div>
     </section>

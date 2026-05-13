@@ -151,18 +151,18 @@ export default function App(): JSX.Element {
     <section className="left">
       <section className="panel stepper"><h2>Workflow</h2><ol><li>Source</li><li>Rename</li><li>Preview</li><li>Process</li><li>Export</li></ol></section>
       <FolderPicker input={options.input || ''} output={outputDisplay} mode={mode} selectedFileCount={options.filePaths?.length ?? 0} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
-      <div className="actions"><button type="button" className="secondary" onClick={() => void pickFiles()} disabled={busy || !bridgeAvailable}>Choose Image File(s)</button></div>
+      <div className="actions"><button title="Ctrl+Shift+O" type="button" className="secondary" onClick={() => void pickFiles()} disabled={busy || !bridgeAvailable}>Choose Image File(s) <span className="status-chip">Ctrl+Shift+O</span></button></div>
       <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop a folder or multiple image files</strong><p>Drag a folder for folder mode, or drag supported files for selected-files mode.</p></div>
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
       <div className="actions sticky-actions">
-        <button title="Ctrl+P" type="button" onClick={() => void handlePreview()} disabled={!availability.preview.enabled} className="secondary">Preview (dry run)</button><span className="hint">Checks names and formats before writing. (Ctrl+P)</span>
-        <button title="Ctrl+E" type="button" onClick={() => void handleEstimate()} disabled={!availability.estimate.enabled} className="secondary">Estimate Sizes</button><span className="hint">In-memory only. Writes no files. (Ctrl+E)</span>
-        <button title="Ctrl+Enter" type="button" onClick={() => void handleProcess()} disabled={!availability.process.enabled} className="primary">Process Included</button><span className="hint">Writes optimized files and manifests. (Ctrl+Enter)</span>
+        <button title="Ctrl+P" type="button" onClick={() => void handlePreview()} disabled={!availability.preview.enabled} className="secondary">Preview <span className="status-chip">Ctrl+P</span></button>
+        <button title="Ctrl+E" type="button" onClick={() => void handleEstimate()} disabled={!availability.estimate.enabled} className="secondary">Estimate Sizes <span className="status-chip">Ctrl+E</span></button>
+        <button title="Ctrl+Enter" type="button" onClick={() => void handleProcess()} disabled={!availability.process.enabled} className="primary">Process Included <span className="status-chip">Ctrl+Enter</span></button>
         {!availability.preview.enabled || !availability.estimate.enabled || !availability.process.enabled ? <p className="hint warn">{availability.preview.reason ?? availability.estimate.reason ?? availability.process.reason}</p> : null}
         <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
-      <section className="panel"><h3>Recent</h3><p className="hint">Inputs</p><div className="actions">{recentInputs.map((p) => <button key={p} type="button" className="secondary" onClick={() => setOptions((prev) => ({ ...prev, input: p, filePaths: [] }))}>{p}</button>)}</div><p className="hint">Outputs</p><div className="actions">{recentOutputs.map((p) => <button key={p} type="button" className="secondary" onClick={() => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }}>{p}</button>)}</div><button type="button" className="secondary" onClick={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); }}>Clear recent</button></section>
-      <section className="panel"><button type="button" className="secondary" onClick={() => setShowHelp((v) => !v)}>{showHelp ? 'Hide Help' : 'Show Help'}</button>{showHelp ? <div><p className="hint">Preview checks names/formats and writes no files. Estimate is in-memory only. Process Included writes optimized files + manifests.</p><p className="hint">Tokens: {'{name}'} {'{prefix}'} {'{index}'} {'{folder}'} {'{custom}'}</p></div> : null}</section>
+      <section className="panel"><h3>Recents</h3><div className="recents-grid"><div className="recent-col"><h4>Recent source</h4><div className="actions">{recentInputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => setOptions((prev) => ({ ...prev, input: p, filePaths: [] }))}>{p}</button>)}</div></div><div className="recent-col"><h4>Recent output</h4><div className="actions">{recentOutputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }}>{p}</button>)}</div></div></div><button type="button" className="secondary" onClick={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); setStatus('Cleared recent paths.'); }}>Clear recents</button></section>
+      <section className="panel"><button type="button" className="secondary" onClick={() => setShowHelp((v) => !v)}>{showHelp ? 'Hide Help' : 'Show Help'}</button>{showHelp ? <div><h3>Workflow</h3><p className="hint">Preview writes no files. Estimate Sizes writes no files. Generate Preview writes no files. Process Included writes optimized files plus Manifest JSON and Manifest CSV.</p><h3>Tokens</h3><p className="hint">{'{name}'} {'{prefix}'} {'{index}'} {'{folder}'} {'{custom}'}</p><h3>Formats</h3><p className="hint">WebP recommended. AVIF smaller/slower. JPEG photos only (no transparency). PNG lossless and transparency-safe.</p><h3>Safety</h3><p className="hint">Everything runs locally on your machine.</p></div> : null}</section>
     </section>
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
@@ -190,12 +190,12 @@ export default function App(): JSX.Element {
                   setStatus(result.error ? `Preview failed: ${result.error}` : 'Preview generated.');
                 } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); }
               })()}>Generate Preview</button>
-              <button type="button" className="secondary" onClick={() => setStudioPreview(null)} disabled={!studioPreview}>Clear Preview</button>
+              <button title="Esc" type="button" className="secondary" onClick={() => setStudioPreview(null)} disabled={!studioPreview}>Clear Preview <span className="status-chip">Esc</span></button>
             </div>
             {studioPreview?.error ? <p className="hint warn">{studioPreview.error}</p> : null}
-            <div className="studio-grid">
-              <div><h3>Original</h3>{studioPreview?.original?.dataUrl ? <img className="studio-img" src={studioPreview.original.dataUrl} alt="Original preview" /> : <p className="hint">Generate preview to view original.</p>}</div>
-              <div><h3>Optimized</h3>{studioPreview?.optimized?.dataUrl ? <img className="studio-img" src={studioPreview.optimized.dataUrl} alt="Optimized preview" /> : <p className="hint">Generate preview to view optimized.</p>}</div>
+            <div className="preview-studio-grid">
+              <div className="image-card"><h3>Original</h3><div className="image-stage">{studioPreview?.original?.dataUrl ? <img className="studio-img" src={studioPreview.original.dataUrl} alt="Original preview" /> : <p className="hint">Generate Preview to view original.</p>}</div></div>
+              <div className="image-card"><h3>Optimized Preview</h3><div className="image-stage">{studioPreview?.optimized?.dataUrl ? <img className="studio-img" src={studioPreview.optimized.dataUrl} alt="Optimized preview" /> : <p className="hint">Generate Preview to view optimized.</p>}</div></div>
             </div>
           </div>;
         })()}
