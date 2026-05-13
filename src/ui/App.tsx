@@ -129,7 +129,7 @@ export default function App(): JSX.Element {
       <section className="panel">
         <h2>Preview Studio</h2>
         {!selectedRowKey ? <p className="hint">Select an image from the preview table to inspect it.</p> : (() => {
-          const row = previewRows.find((r) => `${r.originalFilename}-${r.outputFilename}` === selectedRowKey);
+          const row = previewRows.find((r) => r.id === selectedRowKey);
           if (!row) return <p className="hint">Selected row is not visible in the current filter.</p>;
           return <div>
             <p className="mono">{row.originalFilename} → {row.outputFilename}</p>
