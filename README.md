@@ -245,6 +245,11 @@ npm run start:gui
 - Estimate rows show clear states (not estimated, estimated, failed, larger-than-original, skipped) to improve review confidence.
 - Summary supports teammate-friendly “Copy summary” output and manifest shortcuts.
 
+### Operator shortcuts and recents
+
+- Shortcuts: `Ctrl+O` choose folder, `Ctrl+Shift+O` choose files, `Ctrl+P` preview, `Ctrl+E` estimate, `Ctrl+Enter` process included, `Esc` clears preview image.
+- Recent input/output folders are saved locally for faster repeat runs (up to 8 each).
+
 Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or remote processing.
 
 

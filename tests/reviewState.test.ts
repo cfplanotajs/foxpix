@@ -38,4 +38,16 @@ describe('review state filters', () => {
     expect(classifyEstimateRow({ ...rows[2], estimatedOutputSize: 5, estimatedSavedBytes: -1 }, true)).toBe('larger');
     expect(classifyEstimateRow({ ...rows[2], estimatedOutputSize: 5, estimatedSavedBytes: 1 }, true)).toBe('estimated');
   });
+
+  it('supports estimate-focused filters and search composition', () => {
+    const withEst = [
+      { ...rows[0], estimatedOutputSize: 5, estimatedSavedBytes: -1 },
+      { ...rows[1] },
+      { ...rows[2], estimatedOutputSize: 2, estimatedSavedBytes: 1, originalFilename: 'find-me.jpg' }
+    ];
+    expect(filterPreviewRows(withEst as any, 'larger', '', {}, {}).map((r) => r.id)).toEqual(['1']);
+    expect(filterPreviewRows(withEst as any, 'estimate_failed', '', {}, {}).map((r) => r.id)).toEqual(['2']);
+    expect(filterPreviewRows(withEst as any, 'estimated_only', 'find', {}, {}).map((r) => r.id)).toEqual(['3']);
+    expect(filterPreviewRows(rows, 'not_estimated', '', {}, {}).map((r) => r.id)).toContain('1');
+  });
 });

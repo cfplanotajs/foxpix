@@ -11,6 +11,7 @@ import { hasIncludedRows } from './selectionState.js';
 import { applyBulkIncludedOverrides, getEffectiveOutputFormat, resetAllOverrides } from './formatOverrides.js';
 import { computeReviewCounts } from './reviewState.js';
 import { buildRecommendations, computeFormatMix } from './recommendations.js';
+import { clearRecentPaths, pushRecentPath } from './recentPaths.js';
 
 const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false, outputFormat: DEFAULT_OUTPUT_FORMAT };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
@@ -37,14 +38,32 @@ export default function App(): JSX.Element {
   const [visibleRowIds, setVisibleRowIds] = useState<string[]>([]);
   const [thumbnailMap, setThumbnailMap] = useState<Record<string, { dataUrl?: string; loading?: boolean; error?: string; hasAlpha?: boolean }>>({});
   const [estimatesStale, setEstimatesStale] = useState(false);
+  const [recentInputs, setRecentInputs] = useState<string[]>([]);
+  const [recentOutputs, setRecentOutputs] = useState<string[]>([]);
+  const [showHelp, setShowHelp] = useState(false);
   const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
   const outputDisplay = useMemo(() => options.output || '', [options.output]);
   const validationError = validateOptions(options);
   const bridgeError = bridgeAvailable ? null : bridgeMsg;
   const mode: 'folder' | 'files' | 'none' = options.filePaths && options.filePaths.length > 0 ? 'files' : options.input ? 'folder' : 'none';
 
-  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved, outputFormat: normalizeOutputFormat(saved.outputFormat) })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); }).catch(() => {}); }, [bridgeAvailable]);
-  useEffect(() => { if (!bridgeAvailable) return; const t = setTimeout(() => { void window.foxpix.saveSettings({ ...options, outputTouched, selectedPreset }); }, 200); return () => clearTimeout(t); }, [bridgeAvailable, options, outputTouched, selectedPreset]);
+  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved: any) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved, outputFormat: normalizeOutputFormat(saved.outputFormat) })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); setRecentInputs(saved.recentInputs ?? []); setRecentOutputs(saved.recentOutputs ?? []); }).catch(() => {}); }, [bridgeAvailable]);
+  useEffect(() => { if (!bridgeAvailable) return; const t = setTimeout(() => { void window.foxpix.saveSettings({ ...options, outputTouched, selectedPreset, recentInputs, recentOutputs } as any); }, 200); return () => clearTimeout(t); }, [bridgeAvailable, options, outputTouched, selectedPreset, recentInputs, recentOutputs]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const t = e.target as HTMLElement | null;
+      if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
+      if (!bridgeAvailable || busy) return;
+      if (e.ctrlKey && e.key.toLowerCase() === 'o' && !e.shiftKey) { e.preventDefault(); void pickInput(); }
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'o') { e.preventDefault(); void pickFiles(); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'p') { e.preventDefault(); void handlePreview(); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'e') { e.preventDefault(); void handleEstimate(); }
+      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); void handleProcess(); }
+      if (e.key === 'Escape') setStudioPreview(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
   useEffect(() => {
     if (!bridgeAvailable || previewRows.length === 0) return;
     const missing = previewRows.filter((r) => !thumbnailMap[r.id]).map((r) => r.sourcePath);
@@ -73,8 +92,8 @@ export default function App(): JSX.Element {
     }
     setOptions(next); const base = selectedPreset === 'custom' ? null : workflowPresets[selectedPreset as Exclude<WorkflowPresetId, 'custom'>]; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.effort !== (base.effort ?? next.effort) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
 
-  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setOptions((prev) => outputTouched ? { ...prev, input: picked, filePaths: [] } : { ...prev, input: picked, filePaths: [], output: '' }); setStatus('Folder selected. Click Preview to check output names.'); };
-  const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); setStatus('Output folder selected.'); } };
+  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setRecentInputs((prev) => pushRecentPath(prev, picked)); setOptions((prev) => outputTouched ? { ...prev, input: picked, filePaths: [] } : { ...prev, input: picked, filePaths: [], output: '' }); setStatus('Folder selected. Click Preview to check output names.'); };
+  const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setRecentOutputs((prev) => pushRecentPath(prev, picked)); setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); setStatus('Output folder selected.'); } };
   const pickFiles = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectImageFiles(); if (!picked || picked.length === 0) return; setOptions((prev) => ({ ...prev, filePaths: picked, input: undefined, output: outputTouched ? prev.output : '' })); setStatus(`Selected files: ${picked.length}`); };
 
   const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined, formatOverrides }); setPreviewRows(result.rows); setThumbnailMap({}); setIncludedMap(Object.fromEntries(result.rows.map((r) => [r.id, true]))); setEstimatesStale(true); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.total === 0 ? 'No supported files found in this source.' : `Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
@@ -139,6 +158,8 @@ export default function App(): JSX.Element {
         <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !hasIncludedRows(previewRows, includedMap) || Boolean(validationError)} className="primary">Process Included</button><span className="hint">Writes optimized files and manifests.</span>
         <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
+      <section className="panel"><h3>Recent</h3><p className="hint">Inputs</p><div className="actions">{recentInputs.map((p) => <button key={p} type="button" className="secondary" onClick={() => setOptions((prev) => ({ ...prev, input: p, filePaths: [] }))}>{p}</button>)}</div><p className="hint">Outputs</p><div className="actions">{recentOutputs.map((p) => <button key={p} type="button" className="secondary" onClick={() => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }}>{p}</button>)}</div><button type="button" className="secondary" onClick={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); }}>Clear recent</button></section>
+      <section className="panel"><button type="button" className="secondary" onClick={() => setShowHelp((v) => !v)}>{showHelp ? 'Hide Help' : 'Show Help'}</button>{showHelp ? <div><p className="hint">Preview checks names/formats and writes no files. Estimate is in-memory only. Process Included writes optimized files + manifests.</p><p className="hint">Tokens: {'{name}'} {'{prefix}'} {'{index}'} {'{folder}'} {'{custom}'}</p></div> : null}</section>
     </section>
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
@@ -178,6 +199,7 @@ export default function App(): JSX.Element {
       </section>
 
       <SummaryPanel summary={summary} estimateTotals={estimateTotals} manifestPath={manifestPath} manifestCsvPath={manifestCsvPath} outputFolder={outputDisplay} onOpenPath={async (p) => { const r = await window.foxpix.openFolder(p); if (!r.ok) setStatus(`Open failed. ${r.error}`); }} />
+      <section className="panel"><p className="hint">FoxPix • Local-only • Images are processed on this computer and are not uploaded.</p></section>
     </section>
   </main>);
 }
