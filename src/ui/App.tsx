@@ -14,6 +14,7 @@ import { clearRecentPaths, pushRecentPath } from './recentPaths.js';
 import { sanitizeRecentPaths } from './recentPaths.js';
 import { getActionAvailability } from './actionAvailability.js';
 import { deletePreset, getPresetMatchState, mergeImportedPresets, parsePresetPack, renamePreset, sanitizeCustomPresets, savePreset, serializePresetPack, type CustomPreset } from './customPresets.js';
+import { getPatternWarnings } from './patternAssistant.js';
 
 const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false, outputFormat: DEFAULT_OUTPUT_FORMAT };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
@@ -90,6 +91,7 @@ export default function App(): JSX.Element {
   const applyPreset = (preset: WorkflowPresetId): void => { setSelectedPreset(preset); if (!isBuiltInPreset(preset)) return; setOptions((prev) => ({ ...prev, ...workflowPresets[preset] })); setEstimateTotals(null); setStudioPreview(null); setStatus('Preset applied. Preview or Estimate Sizes again.'); };
   const applyCustomPreset = (id: string): void => { const found = customPresets.find((p) => p.id === id); if (!found) return; setSelectedPreset(`custom:${id}` as WorkflowPresetId); setOptions((prev) => ({ ...prev, ...found.settings })); setEstimateTotals(null); setStudioPreview(null); setStatus('Preset applied. Preview or Estimate Sizes again.'); };
   const onOptionsChange = (next: GuiOptions): void => {
+    const namingChanged = next.pattern !== options.pattern || next.prefix !== options.prefix || next.custom !== options.custom;
     if ((next.outputFormat ?? 'webp') !== (options.outputFormat ?? 'webp') && previewRows.length > 0) {
       setPreviewRows([]);
       setIncludedMap({});
@@ -97,6 +99,11 @@ export default function App(): JSX.Element {
       setFormatOverrides({});
       setStudioPreview(null);
       setStatus('Settings changed. Preview or Estimate Sizes again before processing.');
+    }
+    if (namingChanged && previewRows.length > 0) {
+      setStudioPreview(null);
+      setEstimateTotals(null);
+      setStatus('Filename pattern changed. Click Preview again.');
     }
     setOptions(next); const base = isBuiltInPreset(selectedPreset) ? workflowPresets[selectedPreset] : null; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.effort !== (base.effort ?? next.effort) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
 
@@ -173,7 +180,7 @@ export default function App(): JSX.Element {
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
       <section className="panel"><h2>Readiness</h2><p className="hint">{previewRows.length === 0 ? 'Needs preview' : estimatesStale ? 'Needs estimate' : 'Ready'}</p><p className="hint">Source: {mode === 'folder' ? (options.input || 'No source selected') : mode === 'files' ? `${options.filePaths?.length ?? 0} selected files` : 'No source selected'}</p><p className="hint">Global format: {(options.outputFormat ?? 'webp').toUpperCase()} • Mix: {(() => { const mix = computeFormatMix(previewRows); return `WebP ${mix.webp}, AVIF ${mix.avif}, JPEG ${mix.jpeg}, PNG ${mix.png}`; })()}</p><p className="hint">{outputFolderStatus?.status === 'exists' ? 'Output folder exists.' : outputFolderStatus?.status === 'will-create' ? 'Output folder will be created during processing.' : outputFolderStatus?.status === 'not-directory' ? 'Output path is not a folder.' : outputFolderStatus?.status === 'not-accessible' ? 'Output folder cannot be accessed.' : ''}</p>{estimatesStale ? <p className="hint warn">Settings changed. Preview or Estimate Sizes again before processing.</p> : null}</section>
-      <section className="panel"><h2>Smart Recommendations</h2><ul>{buildRecommendations({ rows: previewRows, includedMap, outputFormat: normalizeOutputFormat(options.outputFormat), estimatesReady: estimateTotals !== null, estimatesStale, outputFolderStatus }).map((n) => <li key={n} className="hint">{n}</li>)}</ul></section>
+      <section className="panel"><h2>Smart Recommendations</h2><ul>{buildRecommendations({ rows: previewRows, includedMap, outputFormat: normalizeOutputFormat(options.outputFormat), estimatesReady: estimateTotals !== null, estimatesStale, outputFolderStatus, patternWarnings: getPatternWarnings({ pattern: options.pattern, prefix: options.prefix, custom: options.custom }) }).map((n) => <li key={n} className="hint">{n}</li>)}</ul></section>
       <section className="panel"><p className="hint">Only included rows will be estimated and processed.</p><p className="hint">{(() => { const c = computeReviewCounts(previewRows, includedMap, formatOverrides); return `Ready to process: ${c.included} of ${c.total} images • Skipped: ${c.skipped} • Overrides: ${c.overrides} • Renamed: ${c.renamed} • Warnings: ${c.warnings} • Errors: ${c.errors}`; })()}</p>{previewRows.some((r) => r.wasRenamedForCollision || r.outputAlreadyExists) ? <p className="hint warn">Some output names were adjusted to avoid collisions.</p> : null}</section>
       <PreviewTable rows={previewRows} includedMap={includedMap} thumbnailMap={thumbnailMap} onToggleInclude={(id, included) => setIncludedMap((prev) => ({ ...prev, [id]: included }))} onSelectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, true])))} onDeselectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, false])))} onInvertSelection={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, !(includedMap[r.id] !== false)])))} selectedRowKey={selectedRowKey} onSelectRow={(key) => { setSelectedRowKey(key); setStudioPreview(null); }} globalFormat={normalizeOutputFormat(options.outputFormat)} formatOverrides={formatOverrides} onSetFormatOverride={(id, format) => { setFormatOverrides((prev) => { const next = { ...prev }; if (!format) delete next[id]; else next[id] = format; return next; }); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onResetAllOverrides={() => { setFormatOverrides(resetAllOverrides()); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onBulkSetIncludedFormat={(format) => { setFormatOverrides((prev) => applyBulkIncludedOverrides(previewRows, includedMap, prev, format)); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onVisibleRowIdsChange={setVisibleRowIds} />
 

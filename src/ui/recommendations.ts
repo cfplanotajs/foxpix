@@ -1,7 +1,7 @@
 import type { OutputFormat } from '../types/index.js';
 import type { PreviewRow } from './types.js';
 
-export function buildRecommendations(args: { rows: PreviewRow[]; includedMap: Record<string, boolean>; outputFormat: OutputFormat; estimatesReady: boolean; estimatesStale: boolean; outputFolderStatus?: { status: string; path: string; error?: string } | null }): string[] {
+export function buildRecommendations(args: { rows: PreviewRow[]; includedMap: Record<string, boolean>; outputFormat: OutputFormat; estimatesReady: boolean; estimatesStale: boolean; outputFolderStatus?: { status: string; path: string; error?: string } | null; patternWarnings?: string[] }): string[] {
   const notes: string[] = [];
   const included = args.rows.filter((r) => args.includedMap[r.id] !== false);
   const failed = included.filter((r) => r.error);
@@ -21,6 +21,9 @@ export function buildRecommendations(args: { rows: PreviewRow[]; includedMap: Re
   if (args.outputFolderStatus?.status === 'will-create') notes.push('Output folder will be created during processing.');
   if (args.outputFolderStatus?.status === 'not-directory') notes.push('Output path is not a folder. Choose another output location.');
   if (args.outputFolderStatus?.status === 'not-accessible') notes.push('Output folder cannot be accessed. Choose another output location.');
+  if (args.patternWarnings?.some((w) => w.includes('duplicates'))) notes.push('This filename pattern may create many duplicates. Consider adding {name} or {index}.');
+  if (args.patternWarnings?.some((w) => w.includes('{custom}'))) notes.push('Add custom text or remove {custom} from the pattern.');
+  if (args.patternWarnings?.some((w) => w.includes('{prefix}'))) notes.push('Add a prefix or remove {prefix} from the pattern.');
   return notes;
 }
 

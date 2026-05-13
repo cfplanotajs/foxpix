@@ -3,6 +3,7 @@ import { slugify } from '../../core/slugify.js';
 import { workflowPresets } from '../../core/presets.js';
 import type { GuiOptions, WorkflowPresetId } from '../types.js';
 import type { CustomPreset } from '../customPresets.js';
+import { buildPatternExample, getPatternWarnings } from '../patternAssistant.js';
 
 interface SettingsPanelProps {
   options: GuiOptions;
@@ -40,6 +41,10 @@ export default function SettingsPanel({ options, onChange, disabled, selectedPre
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [presetName, setPresetName] = useState('');
   const presetText = selectedPreset === 'custom' || selectedPreset.startsWith('custom:') ? 'Custom settings mode. Adjust values below.' : presetHelp[selectedPreset];
+  const warnings = getPatternWarnings({ pattern: options.pattern, prefix: options.prefix, custom: options.custom });
+  const ex1 = buildPatternExample({ pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat });
+  const ex2 = buildPatternExample({ pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat, sampleName: 'Blue Sticker Pack', index: 2, sampleFolder: 'stickers' });
+  const insert = (token: string): void => onChange({ ...options, pattern: `${options.pattern}${token}` });
   return (<section className="panel"><h2>Rename + compression settings</h2><p className="hint">{presetText}</p><p className="pill">{presetLabel}</p><h3>Basic</h3><div className="grid">
     <label>Preset<select disabled={disabled} value={selectedPreset} onChange={(e) => {
       const v = e.target.value;
@@ -52,6 +57,11 @@ export default function SettingsPanel({ options, onChange, disabled, selectedPre
     <label>Output format<select disabled={disabled} value={options.outputFormat ?? 'webp'} onChange={(e) => onChange({ ...options, outputFormat: e.target.value as GuiOptions['outputFormat'] })}><option value="webp">WebP — recommended</option><option value="avif">AVIF — smaller, slower</option><option value="jpeg">JPEG — photos only, no transparency</option><option value="png">PNG — lossless/transparency-safe</option></select><small>Choose the format FoxPix will create. WebP is recommended for most web assets.</small></label>
     <label>Prefix<input disabled={disabled} value={options.prefix ?? ''} onChange={(e) => onChange({ ...options, prefix: e.target.value })} /></label>
     <label>Filename pattern<input disabled={disabled} value={options.pattern} onChange={(e) => onChange({ ...options, pattern: e.target.value })} /></label>
+    <div className="actions"><button type="button" className="secondary" onClick={() => insert('{name}')}>Original name</button><button type="button" className="secondary" onClick={() => insert('{prefix}')}>Prefix</button><button type="button" className="secondary" onClick={() => insert('{index}')}>Index</button><button type="button" className="secondary" onClick={() => insert('{folder}')}>Folder</button><button type="button" className="secondary" onClick={() => insert('{custom}')}>Custom text</button><button type="button" className="secondary" onClick={() => insert('-')}>-</button><button type="button" className="secondary" onClick={() => insert('_')}>_</button><button type="button" className="secondary" onClick={() => onChange({ ...options, pattern: '' })}>Clear pattern</button></div>
+    <div className="actions"><button type="button" className="secondary" onClick={() => onChange({ ...options, pattern: '{name}' })}>Web-safe original</button><button type="button" className="secondary" onClick={() => onChange({ ...options, pattern: '{prefix}-{index}' })}>Prefix + index</button><button type="button" className="secondary" onClick={() => onChange({ ...options, pattern: '{prefix}-{name}' })}>Prefix + name</button><button type="button" className="secondary" onClick={() => onChange({ ...options, pattern: '{folder}-{name}' })}>Folder + name</button><button type="button" className="secondary" onClick={() => onChange({ ...options, pattern: '{custom}-{index}' })}>Custom + index</button><button type="button" className="secondary" onClick={() => onChange({ ...options, pattern: '{name}-{index}' })}>Name + index</button></div>
+    <p className="hint">FoxPix makes filenames web-safe automatically. Underscores are converted to hyphens.</p>
+    <p className="hint">Example 1: My Cute Animal.png → {ex1}</p><p className="hint">Example 2: Blue Sticker Pack.png → {ex2}</p>
+    {warnings.map((w) => <p key={w} className="hint warn">{w}</p>)}
     <div className="token-help"><strong>Pattern tokens</strong><ul>
       <li><code>{'{name}'}</code> = original filename made web-safe</li>
       <li><code>{'{prefix}'}</code> = prefix text</li>

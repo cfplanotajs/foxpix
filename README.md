@@ -254,6 +254,16 @@ npm run start:gui
 - If output path is a file or inaccessible, processing is blocked with a readable error.
 - Manifest JSON and CSV include rename diagnostic fields for suffixed/adjusted outputs.
 
+### Filename patterns
+
+- Tokens: `{name}` `{prefix}` `{index}` `{folder}` `{custom}`.
+- Common CLI examples:
+  - `--pattern "{name}"`
+  - `--pattern "{prefix}-{index}"`
+  - `--pattern "{folder}-{name}"`
+- FoxPix makes output names web-safe automatically and adds safe suffixes (`-2`, `-3`) when needed.
+- Use **Preview** to confirm final names before writing files.
+
 ### Recommended usability workflow
 
 1. Add source (folder or selected files).
