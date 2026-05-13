@@ -14,6 +14,7 @@ import { writeManifestCsv } from '../core/manifestCsv.js';
 import type { RenamePlanItem } from '../types/index.js';
 import { normalizeOptions, type GuiOptionsLike } from './normalizeOptions.js';
 import { resolveDroppedItems } from './droppedItems.js';
+import { filterDiscoveredFilesByIncludedPaths } from '../core/includedPaths.js';
 
 type GuiOptions = GuiOptionsLike;
 
@@ -120,9 +121,8 @@ app.whenReady().then(() => {
       : rawOptions.input
         ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
         : [];
-    const included = rawOptions.includedPaths && rawOptions.includedPaths.length > 0 ? new Set(rawOptions.includedPaths.map((p: string) => path.resolve(p))) : null;
-    const filtered = included ? discovered.filter((f) => included.has(path.resolve(f.absolutePath))) : discovered;
-    if (included && filtered.length === 0) throw new Error('Select at least one image to process.');
+    const filtered = filterDiscoveredFilesByIncludedPaths(discovered, rawOptions.includedPaths);
+    if (rawOptions.includedPaths && filtered.length === 0) throw new Error('Select at least one image to process.');
     const plan = await buildRenamePlan({
       files: filtered,
       outputFolder: options.output,
@@ -161,9 +161,8 @@ app.whenReady().then(() => {
       : rawOptions.input
         ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
         : [];
-    const included = rawOptions.includedPaths && rawOptions.includedPaths.length > 0 ? new Set(rawOptions.includedPaths.map((p: string) => path.resolve(p))) : null;
-    const filtered = included ? discovered.filter((f) => included.has(path.resolve(f.absolutePath))) : discovered;
-    if (included && filtered.length === 0) throw new Error('Select at least one image to process.');
+    const filtered = filterDiscoveredFilesByIncludedPaths(discovered, rawOptions.includedPaths);
+    if (rawOptions.includedPaths && filtered.length === 0) throw new Error('Select at least one image to process.');
     const plan = await buildRenamePlan({ files: filtered, outputFolder: options.output, pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat });
     return estimateImages(plan, options);
   });
@@ -180,9 +179,8 @@ app.whenReady().then(() => {
       : rawOptions.input
         ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
         : [];
-    const included = rawOptions.includedPaths && rawOptions.includedPaths.length > 0 ? new Set(rawOptions.includedPaths.map((p: string) => path.resolve(p))) : null;
-    const filtered = included ? discovered.filter((f) => included.has(path.resolve(f.absolutePath))) : discovered;
-    if (included && filtered.length === 0) throw new Error('Select at least one image to process.');
+    const filtered = filterDiscoveredFilesByIncludedPaths(discovered, rawOptions.includedPaths);
+    if (rawOptions.includedPaths && filtered.length === 0) throw new Error('Select at least one image to process.');
     const plan = await buildRenamePlan({
       files: filtered,
       outputFolder: options.output,

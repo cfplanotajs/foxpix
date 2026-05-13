@@ -7,6 +7,7 @@ import ProgressPanel from './components/ProgressPanel.js';
 import type { PreviewRow, GuiOptions, WorkflowPresetId } from './types.js';
 import { DEFAULT_OUTPUT_FORMAT, normalizeOutputFormat, type ProcessingSummary } from '../types/index.js';
 import { workflowPresets } from '../core/presets.js';
+import { computeSelectionCounts, hasIncludedRows } from './selectionState.js';
 
 const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false, outputFormat: DEFAULT_OUTPUT_FORMAT };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
@@ -111,14 +112,14 @@ export default function App(): JSX.Element {
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
       <div className="actions sticky-actions">
         <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="secondary">Preview (dry run)</button>
-        <button type="button" onClick={() => void handleEstimate()} disabled={busy || !bridgeAvailable || previewRows.filter((r) => includedMap[r.id] !== false).length === 0 || Boolean(validationError)} className="secondary">Estimate Sizes</button>
-        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || previewRows.filter((r) => includedMap[r.id] !== false).length === 0 || Boolean(validationError)} className="primary">Process</button>
+        <button type="button" onClick={() => void handleEstimate()} disabled={busy || !bridgeAvailable || !hasIncludedRows(previewRows, includedMap) || Boolean(validationError)} className="secondary">Estimate Sizes</button>
+        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !hasIncludedRows(previewRows, includedMap) || Boolean(validationError)} className="primary">Process</button>
         <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
     </section>
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
-      <section className="panel"><p className="hint">Only included rows will be estimated and processed.</p><p className="hint">Ready to process: {previewRows.filter((r) => includedMap[r.id] !== false).length} of {previewRows.length} images • Skipped: {previewRows.filter((r) => includedMap[r.id] === false).length}</p></section>
+      <section className="panel"><p className="hint">Only included rows will be estimated and processed.</p><p className="hint">{(() => { const c = computeSelectionCounts(previewRows, includedMap); return `Ready to process: ${c.included} of ${c.total} images • Skipped: ${c.skipped}`; })()}</p></section>
       <PreviewTable rows={previewRows} includedMap={includedMap} onToggleInclude={(id, included) => setIncludedMap((prev) => ({ ...prev, [id]: included }))} onSelectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, true])))} onDeselectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, false])))} onInvertSelection={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, !(includedMap[r.id] !== false)])))} selectedRowKey={selectedRowKey} onSelectRow={(key) => { setSelectedRowKey(key); setStudioPreview(null); }} />
 
       <section className="panel">
