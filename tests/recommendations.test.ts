@@ -10,13 +10,13 @@ const rows: PreviewRow[] = [
 describe('recommendations', () => {
   it('builds deterministic recommendations', () => {
     const notes = buildRecommendations({ rows, includedMap: {}, outputFormat: 'jpeg', estimatesReady: false, estimatesStale: true });
-    expect(notes.some((n) => n.includes('transparent images'))).toBe(true);
-    expect(notes.some((n) => n.includes('Estimate Sizes'))).toBe(true);
-    expect(notes.some((n) => n.includes('larger'))).toBe(true);
-    expect(notes.some((n) => n.includes('adjusted'))).toBe(true);
-    expect(notes.some((n) => n.includes('safe suffixes'))).toBe(true);
+    expect(notes.some((n) => n.text.includes('transparent images'))).toBe(true);
+    expect(notes.some((n) => n.action?.type === 'run-estimate')).toBe(true);
+    expect(notes.some((n) => n.action?.type === 'set-review-filter' && n.action.filter === 'larger')).toBe(true);
+    expect(notes.some((n) => n.action?.type === 'set-review-filter' && n.action.filter === 'renamed')).toBe(true);
+    expect(notes.some((n) => n.action?.type === 'set-risky-jpeg-rows-to-webp')).toBe(true);
     const withStatus = buildRecommendations({ rows, includedMap: {}, outputFormat: 'webp', estimatesReady: true, estimatesStale: false, outputFolderStatus: { status: 'will-create', path: '/out' } });
-    expect(withStatus.some((n) => n.includes('will be created'))).toBe(true);
+    expect(withStatus.some((n) => n.text.includes('will be created'))).toBe(true);
   });
 
   it('computes format mix', () => {

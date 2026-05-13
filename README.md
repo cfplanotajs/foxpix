@@ -254,6 +254,13 @@ npm run start:gui
 - If output path is a file or inaccessible, processing is blocked with a readable error.
 - Manifest JSON and CSV include rename diagnostic fields for suffixed/adjusted outputs.
 
+### Actionable recommendations
+
+- Smart Recommendations are deterministic and local-only.
+- Some recommendations include quick actions (for example Estimate Sizes, Show Renamed filter, safer pattern updates).
+- Quick actions do not upload files and do not write optimized outputs by themselves.
+- **Process Included** remains the only action that writes optimized output files.
+
 ### Filename patterns
 
 - Tokens: `{name}` `{prefix}` `{index}` `{folder}` `{custom}`.
