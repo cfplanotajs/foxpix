@@ -227,6 +227,17 @@ npm run start:gui
 8. Settings are remembered between app launches.
 6. Review summary and failed-file messages, then open output folder.
 
+### Recommended usability workflow
+
+1. Add source (folder or selected files).
+2. Pick preset and output format.
+3. Run Preview.
+4. Review warnings/overrides.
+5. Run Estimate Sizes (writes no files).
+6. Inspect rows in Preview Studio (writes no files).
+7. Process Included (writes optimized files + manifests).
+8. Open output folder and review results.
+
 Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or remote processing.
 
 
