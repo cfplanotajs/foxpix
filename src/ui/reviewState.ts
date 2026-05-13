@@ -2,6 +2,15 @@ import type { OutputFormat } from '../types/index.js';
 import type { PreviewRow } from './types.js';
 
 export type ReviewFilter = 'all' | 'included' | 'skipped' | 'overrides' | 'warnings' | 'errors';
+export type EstimateState = 'not_estimated' | 'estimated' | 'failed' | 'larger' | 'skipped';
+
+export function classifyEstimateRow(row: PreviewRow, included: boolean): EstimateState {
+  if (!included) return 'skipped';
+  if (row.error || row.status === 'failed') return 'failed';
+  if (typeof row.estimatedOutputSize !== 'number') return 'not_estimated';
+  if (typeof row.estimatedSavedBytes === 'number' && row.estimatedSavedBytes < 0) return 'larger';
+  return 'estimated';
+}
 
 export function rowHasOverride(row: PreviewRow, formatOverrides: Record<string, OutputFormat>): boolean {
   return Boolean(formatOverrides[row.id]);

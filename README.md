@@ -238,6 +238,13 @@ npm run start:gui
 7. Process Included (writes optimized files + manifests).
 8. Open output folder and review results.
 
+### Settings clarity
+
+- Basic settings surface preset, output format, naming pattern, and quality first.
+- Advanced settings are collapsible and include alpha quality, effort, resize, metadata, and recursive controls.
+- Estimate rows show clear states (not estimated, estimated, failed, larger-than-original, skipped) to improve review confidence.
+- Summary supports teammate-friendly “Copy summary” output and manifest shortcuts.
+
 Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or remote processing.
 
 

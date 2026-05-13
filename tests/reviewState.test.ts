@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeReviewCounts, filterPreviewRows } from '../src/ui/reviewState.js';
+import { classifyEstimateRow, computeReviewCounts, filterPreviewRows } from '../src/ui/reviewState.js';
 import type { PreviewRow } from '../src/ui/types.js';
 
 const rows: PreviewRow[] = [
@@ -28,5 +28,14 @@ describe('review state filters', () => {
   it('computes review counts', () => {
     const counts = computeReviewCounts(rows, { '2': false }, { '1': 'png' });
     expect(counts).toEqual({ total: 3, included: 2, skipped: 1, overrides: 1, warnings: 1, errors: 1 });
+  });
+
+  it('classifies estimate row states', () => {
+    expect(classifyEstimateRow(rows[0], true)).toBe('not_estimated');
+    expect(classifyEstimateRow(rows[1], true)).toBe('failed');
+    expect(classifyEstimateRow(rows[1], false)).toBe('skipped');
+    expect(classifyEstimateRow(rows[2], true)).toBe('not_estimated');
+    expect(classifyEstimateRow({ ...rows[2], estimatedOutputSize: 5, estimatedSavedBytes: -1 }, true)).toBe('larger');
+    expect(classifyEstimateRow({ ...rows[2], estimatedOutputSize: 5, estimatedSavedBytes: 1 }, true)).toBe('estimated');
   });
 });

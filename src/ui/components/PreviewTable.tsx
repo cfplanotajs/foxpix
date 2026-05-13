@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { PreviewRow } from '../types.js';
 import type { OutputFormat } from '../../types/index.js';
-import { filterPreviewRows, getRowWarningState, type ReviewFilter } from '../reviewState.js';
+import { classifyEstimateRow, filterPreviewRows, getRowWarningState, type ReviewFilter } from '../reviewState.js';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -38,7 +38,7 @@ export default function PreviewTable({ rows, includedMap, thumbnailMap, onToggle
                 <td><input type="checkbox" checked={includedMap[row.id] !== false} onChange={(e) => onToggleInclude(row.id, e.target.checked)} onClick={(e) => e.stopPropagation()} /></td><td>{thumbnailMap[row.id]?.dataUrl ? <div className="thumb-box"><img className="thumb-img" src={thumbnailMap[row.id].dataUrl} alt="thumb" /></div> : thumbnailMap[row.id]?.loading ? <span className="pill">loading</span> : <span className="pill">{row.sourceFormat.toUpperCase()}</span>}{thumbnailMap[row.id]?.hasAlpha ? <span className="pill">alpha</span> : null}</td><td className="mono" title={row.originalFilename}>{row.originalFilename}</td>
                 <td className="file-emphasis" title={row.outputFilename}>{row.outputFilename}</td>
                 <td><span className="pill">{row.sourceFormat.toUpperCase()}</span></td><td><select value={formatOverrides[row.id] ?? ''} onChange={(e) => onSetFormatOverride(row.id, (e.target.value || undefined) as OutputFormat | undefined)} onClick={(e) => e.stopPropagation()}><option value="">Follow global ({globalFormat.toUpperCase()})</option><option value="webp">WebP</option><option value="avif">AVIF</option><option value="jpeg">JPEG</option><option value="png">PNG</option></select>{formatOverrides[row.id] ? <span className="pill">Override</span> : null}<div className="pill">{row.targetFormat.toUpperCase() === 'JPEG' ? 'JPG' : row.targetFormat.toUpperCase()}</div></td><td>{formatBytes(row.originalSize)}</td><td>{row.estimatedOutputSize ? formatBytes(row.estimatedOutputSize) : '—'}</td><td>{typeof row.estimatedSavedPercent === 'number' ? `${row.estimatedSavedPercent}%` : '—'}</td>
-                <td><span className={`pill status-${includedMap[row.id] === false ? 'skipped' : row.status}`}>{includedMap[row.id] === false ? 'skipped' : 'included'}</span>{row.status === 'estimated' ? <span className="pill">estimated</span> : null}{getRowWarningState(row).warning ? <span className="pill">warning</span> : null}{getRowWarningState(row).error ? <span className="pill">error</span> : null}{row.error ? <div className="hint">{row.error}</div> : null}</td>
+                <td>{(() => { const state = classifyEstimateRow(row, includedMap[row.id] !== false); return <><span className={`pill status-${includedMap[row.id] === false ? 'skipped' : row.status}`}>{includedMap[row.id] === false ? 'skipped' : 'included'}</span><span className="pill">{state === 'not_estimated' ? 'not estimated' : state}</span>{state === 'larger' ? <span className="pill">larger</span> : null}{getRowWarningState(row).warning ? <span className="pill">warning</span> : null}{getRowWarningState(row).error ? <span className="pill">error</span> : null}{row.error ? <div className="hint">{row.error}</div> : null}</>; })()}</td>
               </tr>
             ))}
           </tbody>
