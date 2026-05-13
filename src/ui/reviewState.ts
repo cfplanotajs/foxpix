@@ -28,3 +28,12 @@ export function filterPreviewRows(rows: PreviewRow[], filter: ReviewFilter, sear
   });
 }
 
+export function computeReviewCounts(rows: PreviewRow[], includedMap: Record<string, boolean>, formatOverrides: Record<string, OutputFormat>): { total: number; included: number; skipped: number; overrides: number; warnings: number; errors: number } {
+  const total = rows.length;
+  const included = rows.filter((row) => includedMap[row.id] !== false).length;
+  const skipped = total - included;
+  const overrides = rows.filter((row) => rowHasOverride(row, formatOverrides)).length;
+  const warnings = rows.filter((row) => getRowWarningState(row).warning).length;
+  const errors = rows.filter((row) => getRowWarningState(row).error).length;
+  return { total, included, skipped, overrides, warnings, errors };
+}

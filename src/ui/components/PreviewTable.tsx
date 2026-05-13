@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PreviewRow } from '../types.js';
 import type { OutputFormat } from '../../types/index.js';
 import { filterPreviewRows, getRowWarningState, type ReviewFilter } from '../reviewState.js';
@@ -10,12 +10,13 @@ function formatBytes(bytes: number): string {
   return `${(kb / 1024).toFixed(2)} MB`;
 }
 
-export default function PreviewTable({ rows, includedMap, onToggleInclude, onSelectAll, onDeselectAll, onInvertSelection, selectedRowKey, onSelectRow, globalFormat, formatOverrides, onSetFormatOverride, onResetAllOverrides, onBulkSetIncludedFormat }: { rows: PreviewRow[]; includedMap: Record<string, boolean>; onToggleInclude: (id: string, included: boolean) => void; onSelectAll: () => void; onDeselectAll: () => void; onInvertSelection: () => void; selectedRowKey?: string | null; onSelectRow?: (key: string) => void; globalFormat: OutputFormat; formatOverrides: Record<string, OutputFormat>; onSetFormatOverride: (id: string, format?: OutputFormat) => void; onResetAllOverrides: () => void; onBulkSetIncludedFormat: (format: OutputFormat) => void }): JSX.Element {
+export default function PreviewTable({ rows, includedMap, onToggleInclude, onSelectAll, onDeselectAll, onInvertSelection, selectedRowKey, onSelectRow, globalFormat, formatOverrides, onSetFormatOverride, onResetAllOverrides, onBulkSetIncludedFormat, onVisibleRowIdsChange }: { rows: PreviewRow[]; includedMap: Record<string, boolean>; onToggleInclude: (id: string, included: boolean) => void; onSelectAll: () => void; onDeselectAll: () => void; onInvertSelection: () => void; selectedRowKey?: string | null; onSelectRow?: (key: string) => void; globalFormat: OutputFormat; formatOverrides: Record<string, OutputFormat>; onSetFormatOverride: (id: string, format?: OutputFormat) => void; onResetAllOverrides: () => void; onBulkSetIncludedFormat: (format: OutputFormat) => void; onVisibleRowIdsChange?: (ids: string[]) => void }): JSX.Element {
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ReviewFilter>('all');
   const filtered = useMemo(() => {
     return filterPreviewRows(rows, activeFilter, query, includedMap, formatOverrides);
   }, [rows, activeFilter, query, includedMap, formatOverrides]);
+  useEffect(() => { onVisibleRowIdsChange?.(filtered.map((row) => row.id)); }, [filtered, onVisibleRowIdsChange]);
 
   return (
     <section className="panel">

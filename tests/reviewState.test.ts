@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { filterPreviewRows } from '../src/ui/reviewState.js';
+import { computeReviewCounts, filterPreviewRows } from '../src/ui/reviewState.js';
 import type { PreviewRow } from '../src/ui/types.js';
 
 const rows: PreviewRow[] = [
@@ -23,5 +23,10 @@ describe('review state filters', () => {
   it('filters warnings/errors', () => {
     expect(filterPreviewRows(rows, 'warnings', '', {}, {}).map((r) => r.id)).toContain('2');
     expect(filterPreviewRows(rows, 'errors', '', {}, {}).map((r) => r.id)).toEqual(['2']);
+  });
+
+  it('computes review counts', () => {
+    const counts = computeReviewCounts(rows, { '2': false }, { '1': 'png' });
+    expect(counts).toEqual({ total: 3, included: 2, skipped: 1, overrides: 1, warnings: 1, errors: 1 });
   });
 });

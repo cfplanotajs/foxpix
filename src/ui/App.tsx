@@ -7,9 +7,9 @@ import ProgressPanel from './components/ProgressPanel.js';
 import type { PreviewRow, GuiOptions, WorkflowPresetId } from './types.js';
 import { DEFAULT_OUTPUT_FORMAT, normalizeOutputFormat, type ProcessingSummary } from '../types/index.js';
 import { workflowPresets } from '../core/presets.js';
-import { computeSelectionCounts, hasIncludedRows } from './selectionState.js';
+import { hasIncludedRows } from './selectionState.js';
 import { applyBulkIncludedOverrides, getEffectiveOutputFormat, resetAllOverrides } from './formatOverrides.js';
-import { getRowWarningState, rowHasOverride } from './reviewState.js';
+import { computeReviewCounts } from './reviewState.js';
 
 const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false, outputFormat: DEFAULT_OUTPUT_FORMAT };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
@@ -33,6 +33,7 @@ export default function App(): JSX.Element {
   const [studioPreview, setStudioPreview] = useState<any>(null);
   const [includedMap, setIncludedMap] = useState<Record<string, boolean>>({});
   const [formatOverrides, setFormatOverrides] = useState<Record<string, any>>({});
+  const [visibleRowIds, setVisibleRowIds] = useState<string[]>([]);
   const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
   const outputDisplay = useMemo(() => options.output || '', [options.output]);
   const validationError = validateOptions(options);
@@ -123,8 +124,8 @@ export default function App(): JSX.Element {
     </section>
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
-      <section className="panel"><p className="hint">Only included rows will be estimated and processed.</p><p className="hint">{(() => { const c = computeSelectionCounts(previewRows, includedMap); const overrides = previewRows.filter((r) => rowHasOverride(r, formatOverrides)).length; const warnings = previewRows.filter((r) => getRowWarningState(r).warning).length; const errors = previewRows.filter((r) => getRowWarningState(r).error).length; return `Ready to process: ${c.included} of ${c.total} images • Skipped: ${c.skipped} • Overrides: ${overrides} • Warnings: ${warnings} • Errors: ${errors}`; })()}</p></section>
-      <PreviewTable rows={previewRows} includedMap={includedMap} onToggleInclude={(id, included) => setIncludedMap((prev) => ({ ...prev, [id]: included }))} onSelectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, true])))} onDeselectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, false])))} onInvertSelection={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, !(includedMap[r.id] !== false)])))} selectedRowKey={selectedRowKey} onSelectRow={(key) => { setSelectedRowKey(key); setStudioPreview(null); }} globalFormat={normalizeOutputFormat(options.outputFormat)} formatOverrides={formatOverrides} onSetFormatOverride={(id, format) => { setFormatOverrides((prev) => { const next = { ...prev }; if (!format) delete next[id]; else next[id] = format; return next; }); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onResetAllOverrides={() => { setFormatOverrides(resetAllOverrides()); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onBulkSetIncludedFormat={(format) => { setFormatOverrides((prev) => applyBulkIncludedOverrides(previewRows, includedMap, prev, format)); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} />
+      <section className="panel"><p className="hint">Only included rows will be estimated and processed.</p><p className="hint">{(() => { const c = computeReviewCounts(previewRows, includedMap, formatOverrides); return `Ready to process: ${c.included} of ${c.total} images • Skipped: ${c.skipped} • Overrides: ${c.overrides} • Warnings: ${c.warnings} • Errors: ${c.errors}`; })()}</p></section>
+      <PreviewTable rows={previewRows} includedMap={includedMap} onToggleInclude={(id, included) => setIncludedMap((prev) => ({ ...prev, [id]: included }))} onSelectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, true])))} onDeselectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, false])))} onInvertSelection={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, !(includedMap[r.id] !== false)])))} selectedRowKey={selectedRowKey} onSelectRow={(key) => { setSelectedRowKey(key); setStudioPreview(null); }} globalFormat={normalizeOutputFormat(options.outputFormat)} formatOverrides={formatOverrides} onSetFormatOverride={(id, format) => { setFormatOverrides((prev) => { const next = { ...prev }; if (!format) delete next[id]; else next[id] = format; return next; }); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onResetAllOverrides={() => { setFormatOverrides(resetAllOverrides()); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onBulkSetIncludedFormat={(format) => { setFormatOverrides((prev) => applyBulkIncludedOverrides(previewRows, includedMap, prev, format)); setStudioPreview(null); setEstimateTotals(null); setStatus('Format overrides changed. Click Preview or Estimate Sizes again.'); }} onVisibleRowIdsChange={setVisibleRowIds} />
 
       <section className="panel">
         <h2>Preview Studio</h2>
@@ -132,6 +133,7 @@ export default function App(): JSX.Element {
           const row = previewRows.find((r) => r.id === selectedRowKey);
           if (!row) return <p className="hint">Selected row is not visible in the current filter.</p>;
           return <div>
+            {!visibleRowIds.includes(row.id) ? <p className="hint warn">Selected row is hidden by the current filter.</p> : null}
             <p className="mono">{row.originalFilename} → {row.outputFilename}</p>
             <p className="hint">Source: {row.sourceFormat.toUpperCase()} • Target: {row.targetFormat.toUpperCase()}</p>{includedMap[row.id] === false ? <p className="hint warn">This row is currently skipped.</p> : null}
             <p className="hint">{row.estimatedOutputSize ? `Estimated output: ${(row.estimatedOutputSize/1024).toFixed(1)} KB` : 'Not estimated yet'}</p>
