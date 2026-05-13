@@ -178,6 +178,13 @@ npm run start:gui
 - PNG is lossless and transparency-safe.
 - JPEG does not support transparency; FoxPix blocks transparent files instead of flattening them.
 
+### Estimate Sizes
+
+- Preview shows planned output names and formats.
+- **Estimate Sizes** runs in-memory optimization estimates only.
+- Estimation does **not** write output files or manifests.
+- Actual processed sizes can differ slightly; final processing summary is the source of truth.
+
 ### GUI workflow
 
 1. Select input folder.

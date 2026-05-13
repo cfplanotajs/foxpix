@@ -26,14 +26,14 @@ export default function PreviewTable({ rows }: { rows: PreviewRow[] }): JSX.Elem
         <div className="empty-state"><p><strong>No matching files.</strong></p><p>Try a different search term.</p></div>
       ) : (
         <div className="table-wrap"><table>
-          <thead><tr><th>Original</th><th>Output</th><th>Current format</th><th>Target format</th><th>Source size</th><th>Status</th></tr></thead>
+          <thead><tr><th>Original</th><th>Output</th><th>Current format</th><th>Target format</th><th>Current size</th><th>Expected size</th><th>Savings</th><th>Status</th></tr></thead>
           <tbody>
             {filtered.map((row) => (
               <tr key={`${row.originalFilename}-${row.outputFilename}`}>
                 <td className="mono" title={row.originalFilename}>{row.originalFilename}</td>
                 <td className="file-emphasis" title={row.outputFilename}>{row.outputFilename}</td>
-                <td><span className="pill">{row.sourceFormat.toUpperCase()}</span></td><td><span className="pill">{row.targetFormat.toUpperCase() === 'JPEG' ? 'JPG' : row.targetFormat.toUpperCase()}</span></td><td>{formatBytes(row.originalSize)}</td>
-                <td><span className={`pill status-${row.status}`}>{row.status}</span></td>
+                <td><span className="pill">{row.sourceFormat.toUpperCase()}</span></td><td><span className="pill">{row.targetFormat.toUpperCase() === 'JPEG' ? 'JPG' : row.targetFormat.toUpperCase()}</span></td><td>{formatBytes(row.originalSize)}</td><td>{row.estimatedOutputSize ? formatBytes(row.estimatedOutputSize) : '—'}</td><td>{typeof row.estimatedSavedPercent === 'number' ? `${row.estimatedSavedPercent}%` : '—'}</td>
+                <td><span className={`pill status-${row.status}`}>{row.error ? 'failed' : row.status}</span>{row.error ? <div className="hint">{row.error}</div> : null}</td>
               </tr>
             ))}
           </tbody>

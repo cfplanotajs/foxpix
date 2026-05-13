@@ -25,6 +25,7 @@ export default function App(): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('Idle');
   const [dragOver, setDragOver] = useState(false);
+  const [estimateTotals, setEstimateTotals] = useState<{ totalOriginalBytes: number; totalEstimatedOutputBytes: number; totalEstimatedSavedBytes: number; totalEstimatedSavedPercent: number; estimatedCount: number; failedCount: number } | null>(null);
   const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
   const outputDisplay = useMemo(() => options.output || '', [options.output]);
   const validationError = validateOptions(options);
@@ -38,6 +39,7 @@ export default function App(): JSX.Element {
   const onOptionsChange = (next: GuiOptions): void => {
     if ((next.outputFormat ?? 'webp') !== (options.outputFormat ?? 'webp') && previewRows.length > 0) {
       setPreviewRows([]);
+      setEstimateTotals(null);
       setStatus('Preview settings changed. Click Preview again.');
     }
     setOptions(next); const base = selectedPreset === 'custom' ? null : workflowPresets[selectedPreset as Exclude<WorkflowPresetId, 'custom'>]; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.effort !== (base.effort ?? next.effort) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
@@ -47,6 +49,8 @@ export default function App(): JSX.Element {
   const pickFiles = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectImageFiles(); if (!picked || picked.length === 0) return; setOptions((prev) => ({ ...prev, filePaths: picked, input: undefined, output: outputTouched ? prev.output : '' })); setStatus(`Selected files: ${picked.length}`); };
 
   const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.total === 0 ? 'No supported files found in this source.' : `Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+  const handleEstimate = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Estimating output sizes...'); try { const result = await window.foxpix.estimateSizes({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setEstimateTotals(result.totals); setStatus(`Estimated ${result.totals.estimatedCount} files${result.totals.failedCount > 0 ? `, ${result.totals.failedCount} failed` : ''}.`); } catch (error) { setStatus(`Estimate failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+
   const handleProcess = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Processing batch...'); try { const result = await window.foxpix.process({ ...options, output: options.output || undefined }); setSummary(result.summary); setManifestPath(result.manifestPath); setManifestCsvPath(result.manifestCsvPath); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.summary.failed > 0 ? `Completed with warnings: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.` : `Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`); } catch (error) { setStatus(`Processing failed: ${toMessage(error)}`); } finally { setBusy(false); } };
 
   const onDrop = async (event: React.DragEvent<HTMLDivElement>): Promise<void> => {
@@ -102,6 +106,7 @@ export default function App(): JSX.Element {
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
       <div className="actions sticky-actions">
         <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="secondary">Preview (dry run)</button>
+        <button type="button" onClick={() => void handleEstimate()} disabled={busy || !bridgeAvailable || previewRows.length === 0 || Boolean(validationError)} className="secondary">Estimate Sizes</button>
         <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="primary">Process</button>
         <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
@@ -109,7 +114,7 @@ export default function App(): JSX.Element {
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
       <PreviewTable rows={previewRows} />
-      <SummaryPanel summary={summary} manifestPath={manifestPath} manifestCsvPath={manifestCsvPath} outputFolder={outputDisplay} onOpenPath={async (p) => { const r = await window.foxpix.openFolder(p); if (!r.ok) setStatus(`Open failed. ${r.error}`); }} />
+      <SummaryPanel summary={summary} estimateTotals={estimateTotals} manifestPath={manifestPath} manifestCsvPath={manifestCsvPath} outputFolder={outputDisplay} onOpenPath={async (p) => { const r = await window.foxpix.openFolder(p); if (!r.ok) setStatus(`Open failed. ${r.error}`); }} />
     </section>
   </main>);
 }

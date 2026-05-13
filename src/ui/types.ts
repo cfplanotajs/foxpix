@@ -24,7 +24,11 @@ export interface PreviewRow {
   originalSize: number;
   sourceFormat: string;
   targetFormat: OutputFormat;
-  status: 'planned';
+  estimatedOutputSize?: number;
+  estimatedSavedBytes?: number;
+  estimatedSavedPercent?: number;
+  error?: string;
+  status: 'planned' | 'estimated' | 'warning' | 'failed';
 }
 
 export type WorkflowPresetId = 'custom' | 'web-safe-original' | 'shopify-transparent' | 'product-listing' | 'tiny-web' | 'lossless-archive';

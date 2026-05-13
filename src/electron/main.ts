@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stat } from 'node:fs/promises';
+import { estimateImages } from '../core/estimateImages.js';
 import { discoverFiles, discoverFilesFromPaths } from '../core/fileDiscovery.js';
 import { buildRenamePlan } from '../core/rename.js';
 import { processImages } from '../core/processImages.js';
@@ -123,7 +124,8 @@ app.whenReady().then(() => {
       outputFolder: options.output,
       pattern: options.pattern,
       prefix: options.prefix,
-      custom: options.custom
+      custom: options.custom,
+      outputFormat: options.outputFormat
     });
 
     const rows = await Promise.all(plan.map(async (item: RenamePlanItem) => {
@@ -146,6 +148,17 @@ app.whenReady().then(() => {
     };
   });
 
+  ipcMain.handle('foxpix:estimateSizes', async (_event: unknown, rawOptions: GuiOptions) => {
+    const options = normalizeOptions(rawOptions);
+    const discovered = rawOptions.filePaths && rawOptions.filePaths.length > 0
+      ? await discoverFilesFromPaths(rawOptions.filePaths)
+      : rawOptions.input
+        ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
+        : [];
+    const plan = await buildRenamePlan({ files: discovered, outputFolder: options.output, pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat });
+    return estimateImages(plan, options);
+  });
+
   ipcMain.handle('foxpix:process', async (_event: unknown, rawOptions: GuiOptions) => {
     const options = normalizeOptions(rawOptions);
     const discovered = rawOptions.filePaths && rawOptions.filePaths.length > 0
@@ -158,7 +171,8 @@ app.whenReady().then(() => {
       outputFolder: options.output,
       pattern: options.pattern,
       prefix: options.prefix,
-      custom: options.custom
+      custom: options.custom,
+      outputFormat: options.outputFormat
     });
     const summary = await processImages(plan, options);
     const manifest = createManifest(options, summary);
