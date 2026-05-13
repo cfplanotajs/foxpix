@@ -15,6 +15,8 @@ describe('recommendations', () => {
     expect(notes.some((n) => n.includes('larger'))).toBe(true);
     expect(notes.some((n) => n.includes('adjusted'))).toBe(true);
     expect(notes.some((n) => n.includes('safe suffixes'))).toBe(true);
+    const withStatus = buildRecommendations({ rows, includedMap: {}, outputFormat: 'webp', estimatesReady: true, estimatesStale: false, outputFolderStatus: { status: 'will-create', path: '/out' } });
+    expect(withStatus.some((n) => n.includes('will be created'))).toBe(true);
   });
 
   it('computes format mix', () => {

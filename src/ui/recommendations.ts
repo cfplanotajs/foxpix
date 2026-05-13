@@ -1,7 +1,7 @@
 import type { OutputFormat } from '../types/index.js';
 import type { PreviewRow } from './types.js';
 
-export function buildRecommendations(args: { rows: PreviewRow[]; includedMap: Record<string, boolean>; outputFormat: OutputFormat; estimatesReady: boolean; estimatesStale: boolean }): string[] {
+export function buildRecommendations(args: { rows: PreviewRow[]; includedMap: Record<string, boolean>; outputFormat: OutputFormat; estimatesReady: boolean; estimatesStale: boolean; outputFolderStatus?: { status: string; path: string; error?: string } | null }): string[] {
   const notes: string[] = [];
   const included = args.rows.filter((r) => args.includedMap[r.id] !== false);
   const failed = included.filter((r) => r.error);
@@ -18,6 +18,9 @@ export function buildRecommendations(args: { rows: PreviewRow[]; includedMap: Re
   if (renamed.length > 0) notes.push('Some filenames were adjusted to avoid duplicates. Review the Renamed filter before processing.');
   if (existingConflicts.length > 0) notes.push('The output folder already contains matching filenames. FoxPix will save new files with safe suffixes.');
   if (renamed.length > 10) notes.push('Many output names are being adjusted. Consider changing the filename pattern or output folder.');
+  if (args.outputFolderStatus?.status === 'will-create') notes.push('Output folder will be created during processing.');
+  if (args.outputFolderStatus?.status === 'not-directory') notes.push('Output path is not a folder. Choose another output location.');
+  if (args.outputFolderStatus?.status === 'not-accessible') notes.push('Output folder cannot be accessed. Choose another output location.');
   return notes;
 }
 

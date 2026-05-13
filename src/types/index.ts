@@ -58,6 +58,11 @@ export interface ProcessedFileResult {
   width: number;
   height: number;
   compressionPercent: number;
+  desiredOutputFilename?: string;
+  wasRenamedForCollision?: boolean;
+  collisionReason?: 'batch-duplicate' | 'existing-output-file' | 'both';
+  collisionSuffix?: number;
+  outputAlreadyExists?: boolean;
   status: 'success' | 'failed';
   error?: string;
 }

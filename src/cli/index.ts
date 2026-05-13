@@ -10,6 +10,7 @@ import { createManifest, writeManifest } from '../core/manifest.js';
 import { writeManifestCsv } from '../core/manifestCsv.js';
 import { normalizeOutputFormat, type CliOptions } from '../types/index.js';
 import { safeRealpath, samePhysicalPath } from '../core/pathSafety.js';
+import { getOutputFolderStatus } from '../core/outputFolderStatus.js';
 
 async function findPackageJsonPath(startDir: string): Promise<string | null> {
   let current = path.resolve(startDir);
@@ -177,6 +178,9 @@ export async function runCli(argv: string[]): Promise<number> {
       console.log('No files were written and no manifest was created.');
       return 0;
     }
+    const folderStatus = await getOutputFolderStatus(outputFolder);
+    if (folderStatus.status === 'not-directory') throw new Error('Output path is not a folder. Choose another output location.');
+    if (folderStatus.status === 'not-accessible') throw new Error('Output folder cannot be accessed. Choose another output location.');
 
     const summary = await processImages(plan, options);
     const manifest = createManifest(options, summary);
@@ -192,6 +196,8 @@ export async function runCli(argv: string[]): Promise<number> {
     console.log(`Saved: ${summary.savedPercent}%`);
     console.log(`Manifest JSON: ${manifestPath}`);
     console.log(`Manifest CSV: ${manifestCsvPath}`);
+    const renamedCount = plan.filter((p) => p.wasRenamedForCollision).length;
+    if (renamedCount > 0) console.log(`Output names adjusted for safety: ${renamedCount}`);
 
     if (summary.failed > 0) {
       console.log('Command completed with failures. Exiting with status code 1 for automation safety.');

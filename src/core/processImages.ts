@@ -63,6 +63,11 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
         width: outputMetadata.width ?? 0,
         height: outputMetadata.height ?? 0,
         compressionPercent,
+        desiredOutputFilename: item.desiredOutputFilename,
+        wasRenamedForCollision: item.wasRenamedForCollision,
+        collisionReason: item.collisionReason,
+        collisionSuffix: item.collisionSuffix,
+        outputAlreadyExists: item.outputAlreadyExists,
         status: 'success'
       });
     } catch (error) {
@@ -77,6 +82,11 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
         width: 0,
         height: 0,
         compressionPercent: 0,
+        desiredOutputFilename: item.desiredOutputFilename,
+        wasRenamedForCollision: item.wasRenamedForCollision,
+        collisionReason: item.collisionReason,
+        collisionSuffix: item.collisionSuffix,
+        outputAlreadyExists: item.outputAlreadyExists,
         status: 'failed',
         error: error instanceof Error ? error.message : String(error)
       });

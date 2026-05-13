@@ -249,6 +249,10 @@ npm run start:gui
 - FoxPix prevents overwrites by adjusting conflicting names with safe suffixes (`-2`, `-3`, ...).
 - Conflicts can come from duplicate planned names in the current batch or existing files already in the output folder.
 - Use the **Renamed** review filter to inspect rows that were adjusted for safety before processing.
+- Preview also checks output folder readiness (exists / will-create / invalid path).
+- If output folder is missing, FoxPix creates it during Process.
+- If output path is a file or inaccessible, processing is blocked with a readable error.
+- Manifest JSON and CSV include rename diagnostic fields for suffixed/adjusted outputs.
 
 ### Recommended usability workflow
 

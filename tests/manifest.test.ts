@@ -56,6 +56,7 @@ describe('manifest', () => {
       savedPercent: 0,
       files: [{
         originalFilename: 'input/a.png',
+        desiredOutputFilename: 'a.webp',
         outputFilename: 'a-001.webp',
         originalPath: '/input/a.png',
         outputPath: '/output/a-001.webp',
@@ -64,6 +65,10 @@ describe('manifest', () => {
         width: 0,
         height: 0,
         compressionPercent: 0,
+        wasRenamedForCollision: true,
+        collisionReason: 'batch-duplicate',
+        collisionSuffix: 2,
+        outputAlreadyExists: false,
         status: 'failed',
         error: 'decode error'
       }]
@@ -71,6 +76,8 @@ describe('manifest', () => {
 
     const manifest = createManifest(options, summary);
     expect(manifest.files[0].status).toBe('failed');
+    expect(manifest.files[0].desiredOutputFilename).toBe('a.webp');
+    expect(manifest.files[0].collisionReason).toBe('batch-duplicate');
     expect(manifest.files[0].compressionPercent).toBe(0);
     expect(manifest.files[0].error).toBe('decode error');
   });

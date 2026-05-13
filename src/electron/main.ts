@@ -16,6 +16,7 @@ import { normalizeOptions, type GuiOptionsLike } from './normalizeOptions.js';
 import { resolveDroppedItems } from './droppedItems.js';
 import { filterDiscoveredFilesByIncludedPaths } from '../core/includedPaths.js';
 import { createThumbnails } from '../core/thumbnail.js';
+import { getOutputFolderStatus } from '../core/outputFolderStatus.js';
 
 type GuiOptions = GuiOptionsLike;
 
@@ -153,9 +154,11 @@ app.whenReady().then(() => {
       };
     }));
 
+    const outputFolderStatus = await getOutputFolderStatus(options.output);
     return {
       inputFolder: options.input,
       outputFolder: options.output,
+      outputFolderStatus,
       total: rows.length,
       rows
     };
@@ -181,6 +184,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('foxpix:process', async (_event: unknown, rawOptions: GuiOptions & { includedPaths?: string[] }) => {
     const options = normalizeOptions(rawOptions);
+    const folderStatus = await getOutputFolderStatus(options.output);
+    if (folderStatus.status === 'not-directory') throw new Error('Output path is not a folder. Choose another output location.');
+    if (folderStatus.status === 'not-accessible') throw new Error('Output folder cannot be accessed. Choose another output location.');
     const discovered = rawOptions.filePaths && rawOptions.filePaths.length > 0
       ? await discoverFilesFromPaths(rawOptions.filePaths)
       : rawOptions.input
