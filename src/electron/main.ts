@@ -120,8 +120,11 @@ app.whenReady().then(() => {
       : rawOptions.input
         ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
         : [];
+    const included = rawOptions.includedPaths && rawOptions.includedPaths.length > 0 ? new Set(rawOptions.includedPaths.map((p: string) => path.resolve(p))) : null;
+    const filtered = included ? discovered.filter((f) => included.has(path.resolve(f.absolutePath))) : discovered;
+    if (included && filtered.length === 0) throw new Error('Select at least one image to process.');
     const plan = await buildRenamePlan({
-      files: discovered,
+      files: filtered,
       outputFolder: options.output,
       pattern: options.pattern,
       prefix: options.prefix,
@@ -132,6 +135,8 @@ app.whenReady().then(() => {
     const rows = await Promise.all(plan.map(async (item: RenamePlanItem) => {
       const info = await stat(item.source.absolutePath).catch(() => null);
       return {
+        id: item.source.absolutePath,
+        sourcePath: item.source.absolutePath,
         originalFilename: item.source.relativePath,
         outputFilename: item.outputFilename,
         originalSize: info?.size ?? 0,
@@ -149,14 +154,17 @@ app.whenReady().then(() => {
     };
   });
 
-  ipcMain.handle('foxpix:estimateSizes', async (_event: unknown, rawOptions: GuiOptions) => {
+  ipcMain.handle('foxpix:estimateSizes', async (_event: unknown, rawOptions: GuiOptions & { includedPaths?: string[] }) => {
     const options = normalizeOptions(rawOptions);
     const discovered = rawOptions.filePaths && rawOptions.filePaths.length > 0
       ? await discoverFilesFromPaths(rawOptions.filePaths)
       : rawOptions.input
         ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
         : [];
-    const plan = await buildRenamePlan({ files: discovered, outputFolder: options.output, pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat });
+    const included = rawOptions.includedPaths && rawOptions.includedPaths.length > 0 ? new Set(rawOptions.includedPaths.map((p: string) => path.resolve(p))) : null;
+    const filtered = included ? discovered.filter((f) => included.has(path.resolve(f.absolutePath))) : discovered;
+    if (included && filtered.length === 0) throw new Error('Select at least one image to process.');
+    const plan = await buildRenamePlan({ files: filtered, outputFolder: options.output, pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat });
     return estimateImages(plan, options);
   });
 
@@ -165,15 +173,18 @@ app.whenReady().then(() => {
     return generateImagePreview(payload.sourcePath, options, payload.outputFilename);
   });
 
-  ipcMain.handle('foxpix:process', async (_event: unknown, rawOptions: GuiOptions) => {
+  ipcMain.handle('foxpix:process', async (_event: unknown, rawOptions: GuiOptions & { includedPaths?: string[] }) => {
     const options = normalizeOptions(rawOptions);
     const discovered = rawOptions.filePaths && rawOptions.filePaths.length > 0
       ? await discoverFilesFromPaths(rawOptions.filePaths)
       : rawOptions.input
         ? await discoverFiles({ inputFolder: options.input, outputFolder: options.output, recursive: options.recursive })
         : [];
+    const included = rawOptions.includedPaths && rawOptions.includedPaths.length > 0 ? new Set(rawOptions.includedPaths.map((p: string) => path.resolve(p))) : null;
+    const filtered = included ? discovered.filter((f) => included.has(path.resolve(f.absolutePath))) : discovered;
+    if (included && filtered.length === 0) throw new Error('Select at least one image to process.');
     const plan = await buildRenamePlan({
-      files: discovered,
+      files: filtered,
       outputFolder: options.output,
       pattern: options.pattern,
       prefix: options.prefix,

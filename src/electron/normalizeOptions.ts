@@ -18,6 +18,7 @@ export interface GuiOptionsLike {
   recursive: boolean;
   keepMetadata: boolean;
   outputFormat?: CliOptions['outputFormat'];
+  includedPaths?: string[];
 }
 
 export function normalizeOptions(options: GuiOptionsLike): CliOptions {

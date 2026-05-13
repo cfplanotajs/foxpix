@@ -19,6 +19,8 @@ export interface GuiOptions {
 }
 
 export interface PreviewRow {
+  id: string;
+  sourcePath: string;
   originalFilename: string;
   outputFilename: string;
   originalSize: number;
@@ -28,7 +30,7 @@ export interface PreviewRow {
   estimatedSavedBytes?: number;
   estimatedSavedPercent?: number;
   error?: string;
-  status: 'planned' | 'estimated' | 'warning' | 'failed';
+  status: 'planned' | 'estimated' | 'warning' | 'failed' | 'skipped';
 }
 
 export type WorkflowPresetId = 'custom' | 'web-safe-original' | 'shopify-transparent' | 'product-listing' | 'tiny-web' | 'lossless-archive';

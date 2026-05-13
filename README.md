@@ -178,6 +178,12 @@ npm run start:gui
 - PNG is lossless and transparency-safe.
 - JPEG does not support transparency; FoxPix blocks transparent files instead of flattening them.
 
+### Selective processing
+
+- Uncheck preview rows to skip files in the current run.
+- Estimate Sizes and Process apply only to included rows.
+- Skipped rows are not written and are not included in manifests.
+
 ### Preview Studio
 
 - Click a preview row to inspect that image.

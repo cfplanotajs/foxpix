@@ -63,3 +63,6 @@ thead th { position: sticky; top: 0; background: #f8fafc; }
 .selected-row { background:#eef2ff; }
 .studio-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .studio-img { max-width:100%; border:1px solid var(--line); border-radius:8px; background: conic-gradient(#eee 25%, #fff 0 50%, #eee 0 75%, #fff 0) 0 0 / 16px 16px; }
+
+.skipped-row { opacity: 0.55; }
+.status-skipped { background:#f1f5f9; color:#475569; }

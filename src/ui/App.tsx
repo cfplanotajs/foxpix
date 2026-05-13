@@ -28,6 +28,7 @@ export default function App(): JSX.Element {
   const [estimateTotals, setEstimateTotals] = useState<{ totalOriginalBytes: number; totalEstimatedOutputBytes: number; totalEstimatedSavedBytes: number; totalEstimatedSavedPercent: number; estimatedCount: number; failedCount: number } | null>(null);
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
   const [studioPreview, setStudioPreview] = useState<any>(null);
+  const [includedMap, setIncludedMap] = useState<Record<string, boolean>>({});
   const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
   const outputDisplay = useMemo(() => options.output || '', [options.output]);
   const validationError = validateOptions(options);
@@ -41,6 +42,7 @@ export default function App(): JSX.Element {
   const onOptionsChange = (next: GuiOptions): void => {
     if ((next.outputFormat ?? 'webp') !== (options.outputFormat ?? 'webp') && previewRows.length > 0) {
       setPreviewRows([]);
+      setIncludedMap({});
       setEstimateTotals(null);
       setStudioPreview(null);
       setStatus('Preview settings changed. Click Preview again.');
@@ -51,10 +53,10 @@ export default function App(): JSX.Element {
   const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); setStatus('Output folder selected.'); } };
   const pickFiles = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectImageFiles(); if (!picked || picked.length === 0) return; setOptions((prev) => ({ ...prev, filePaths: picked, input: undefined, output: outputTouched ? prev.output : '' })); setStatus(`Selected files: ${picked.length}`); };
 
-  const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.total === 0 ? 'No supported files found in this source.' : `Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
-  const handleEstimate = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Estimating output sizes...'); try { const result = await window.foxpix.estimateSizes({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setEstimateTotals(result.totals); setStatus(`Estimated ${result.totals.estimatedCount} files${result.totals.failedCount > 0 ? `, ${result.totals.failedCount} failed` : ''}.`); } catch (error) { setStatus(`Estimate failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+  const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined }); setPreviewRows(result.rows); setIncludedMap(Object.fromEntries(result.rows.map((r) => [r.id, true]))); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.total === 0 ? 'No supported files found in this source.' : `Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+  const handleEstimate = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); const includedPaths = previewRows.filter((r) => includedMap[r.id] !== false).map((r) => r.sourcePath); if (includedPaths.length === 0) return void setStatus('Select at least one image to process.'); setBusy(true); setStatus('Estimating output sizes...'); try { const result = await window.foxpix.estimateSizes({ ...options, output: options.output || undefined, includedPaths }); setPreviewRows((prev) => prev.map((row) => { const found = result.rows.find((r) => r.id === row.id); return found ?? { ...row, status: includedMap[row.id] === false ? 'skipped' : row.status, estimatedOutputSize: undefined, estimatedSavedPercent: undefined }; })); setEstimateTotals(result.totals); setStatus(`Estimated ${result.totals.estimatedCount} files${result.totals.failedCount > 0 ? `, ${result.totals.failedCount} failed` : ''}.`); } catch (error) { setStatus(`Estimate failed: ${toMessage(error)}`); } finally { setBusy(false); } };
 
-  const handleProcess = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Processing batch...'); try { const result = await window.foxpix.process({ ...options, output: options.output || undefined }); setSummary(result.summary); setManifestPath(result.manifestPath); setManifestCsvPath(result.manifestCsvPath); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.summary.failed > 0 ? `Completed with warnings: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.` : `Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`); } catch (error) { setStatus(`Processing failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+  const handleProcess = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); const includedPaths = previewRows.filter((r) => includedMap[r.id] !== false).map((r) => r.sourcePath); if (includedPaths.length === 0) return void setStatus('Select at least one image to process.'); setBusy(true); setStatus('Processing batch...'); try { const result = await window.foxpix.process({ ...options, output: options.output || undefined, includedPaths }); setSummary(result.summary); setManifestPath(result.manifestPath); setManifestCsvPath(result.manifestCsvPath); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.summary.failed > 0 ? `Completed with warnings: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.` : `Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`); } catch (error) { setStatus(`Processing failed: ${toMessage(error)}`); } finally { setBusy(false); } };
 
   const onDrop = async (event: React.DragEvent<HTMLDivElement>): Promise<void> => {
     event.preventDefault();
@@ -109,14 +111,15 @@ export default function App(): JSX.Element {
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
       <div className="actions sticky-actions">
         <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="secondary">Preview (dry run)</button>
-        <button type="button" onClick={() => void handleEstimate()} disabled={busy || !bridgeAvailable || previewRows.length === 0 || Boolean(validationError)} className="secondary">Estimate Sizes</button>
-        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="primary">Process</button>
+        <button type="button" onClick={() => void handleEstimate()} disabled={busy || !bridgeAvailable || previewRows.filter((r) => includedMap[r.id] !== false).length === 0 || Boolean(validationError)} className="secondary">Estimate Sizes</button>
+        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || previewRows.filter((r) => includedMap[r.id] !== false).length === 0 || Boolean(validationError)} className="primary">Process</button>
         <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
     </section>
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
-      <PreviewTable rows={previewRows} selectedRowKey={selectedRowKey} onSelectRow={(key) => { setSelectedRowKey(key); setStudioPreview(null); }} />
+      <section className="panel"><p className="hint">Only included rows will be estimated and processed.</p><p className="hint">Ready to process: {previewRows.filter((r) => includedMap[r.id] !== false).length} of {previewRows.length} images • Skipped: {previewRows.filter((r) => includedMap[r.id] === false).length}</p></section>
+      <PreviewTable rows={previewRows} includedMap={includedMap} onToggleInclude={(id, included) => setIncludedMap((prev) => ({ ...prev, [id]: included }))} onSelectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, true])))} onDeselectAll={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, false])))} onInvertSelection={() => setIncludedMap(Object.fromEntries(previewRows.map((r) => [r.id, !(includedMap[r.id] !== false)])))} selectedRowKey={selectedRowKey} onSelectRow={(key) => { setSelectedRowKey(key); setStudioPreview(null); }} />
 
       <section className="panel">
         <h2>Preview Studio</h2>
@@ -125,7 +128,7 @@ export default function App(): JSX.Element {
           if (!row) return <p className="hint">Selected row is not visible in the current filter.</p>;
           return <div>
             <p className="mono">{row.originalFilename} → {row.outputFilename}</p>
-            <p className="hint">Source: {row.sourceFormat.toUpperCase()} • Target: {row.targetFormat.toUpperCase()}</p>
+            <p className="hint">Source: {row.sourceFormat.toUpperCase()} • Target: {row.targetFormat.toUpperCase()}</p>{includedMap[row.id] === false ? <p className="hint warn">This row is currently skipped.</p> : null}
             <p className="hint">{row.estimatedOutputSize ? `Estimated output: ${(row.estimatedOutputSize/1024).toFixed(1)} KB` : 'Not estimated yet'}</p>
             <div className="actions">
               <button type="button" className="secondary" disabled={busy} onClick={() => void (async () => {
