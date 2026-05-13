@@ -178,6 +178,13 @@ npm run start:gui
 - PNG is lossless and transparency-safe.
 - JPEG does not support transparency; FoxPix blocks transparent files instead of flattening them.
 
+### Preview Studio
+
+- Click a preview row to inspect that image.
+- Use **Generate Preview** to render side-by-side original and optimized visual previews.
+- Transparent assets are shown on a checkerboard background for visual alpha checks.
+- Preview Studio is for visual confidence; processing + manifests remain the final source of truth.
+
 ### Estimate Sizes
 
 - Preview shows planned output names and formats.

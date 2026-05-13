@@ -26,6 +26,8 @@ export default function App(): JSX.Element {
   const [status, setStatus] = useState('Idle');
   const [dragOver, setDragOver] = useState(false);
   const [estimateTotals, setEstimateTotals] = useState<{ totalOriginalBytes: number; totalEstimatedOutputBytes: number; totalEstimatedSavedBytes: number; totalEstimatedSavedPercent: number; estimatedCount: number; failedCount: number } | null>(null);
+  const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
+  const [studioPreview, setStudioPreview] = useState<any>(null);
   const bridgeAvailable = typeof window !== 'undefined' && typeof window.foxpix !== 'undefined';
   const outputDisplay = useMemo(() => options.output || '', [options.output]);
   const validationError = validateOptions(options);
@@ -40,6 +42,7 @@ export default function App(): JSX.Element {
     if ((next.outputFormat ?? 'webp') !== (options.outputFormat ?? 'webp') && previewRows.length > 0) {
       setPreviewRows([]);
       setEstimateTotals(null);
+      setStudioPreview(null);
       setStatus('Preview settings changed. Click Preview again.');
     }
     setOptions(next); const base = selectedPreset === 'custom' ? null : workflowPresets[selectedPreset as Exclude<WorkflowPresetId, 'custom'>]; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.effort !== (base.effort ?? next.effort) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
@@ -113,7 +116,37 @@ export default function App(): JSX.Element {
     </section>
     <section className="right">
       <ProgressPanel busy={busy} label={bridgeError ?? validationError ?? status} />
-      <PreviewTable rows={previewRows} />
+      <PreviewTable rows={previewRows} selectedRowKey={selectedRowKey} onSelectRow={(key) => { setSelectedRowKey(key); setStudioPreview(null); }} />
+
+      <section className="panel">
+        <h2>Preview Studio</h2>
+        {!selectedRowKey ? <p className="hint">Select an image from the preview table to inspect it.</p> : (() => {
+          const row = previewRows.find((r) => `${r.originalFilename}-${r.outputFilename}` === selectedRowKey);
+          if (!row) return <p className="hint">Selected row is not visible in the current filter.</p>;
+          return <div>
+            <p className="mono">{row.originalFilename} → {row.outputFilename}</p>
+            <p className="hint">Source: {row.sourceFormat.toUpperCase()} • Target: {row.targetFormat.toUpperCase()}</p>
+            <p className="hint">{row.estimatedOutputSize ? `Estimated output: ${(row.estimatedOutputSize/1024).toFixed(1)} KB` : 'Not estimated yet'}</p>
+            <div className="actions">
+              <button type="button" className="secondary" disabled={busy} onClick={() => void (async () => {
+                setBusy(true); setStatus('Generating image preview...');
+                try {
+                  const result = await window.foxpix.generateImagePreview({ sourcePath: row.originalFilename.includes('/') ? `${options.input}/${row.originalFilename}` : (options.filePaths?.find((f) => f.endsWith(row.originalFilename)) ?? row.originalFilename), outputFilename: row.outputFilename, options: { ...options, output: options.output || undefined } });
+                  setStudioPreview(result);
+                  setStatus(result.error ? `Preview failed: ${result.error}` : 'Preview generated.');
+                } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); }
+              })()}>Generate Preview</button>
+              <button type="button" className="secondary" onClick={() => setStudioPreview(null)} disabled={!studioPreview}>Clear Preview</button>
+            </div>
+            {studioPreview?.error ? <p className="hint warn">{studioPreview.error}</p> : null}
+            <div className="studio-grid">
+              <div><h3>Original</h3>{studioPreview?.original?.dataUrl ? <img className="studio-img" src={studioPreview.original.dataUrl} alt="Original preview" /> : <p className="hint">Generate preview to view original.</p>}</div>
+              <div><h3>Optimized</h3>{studioPreview?.optimized?.dataUrl ? <img className="studio-img" src={studioPreview.optimized.dataUrl} alt="Optimized preview" /> : <p className="hint">Generate preview to view optimized.</p>}</div>
+            </div>
+          </div>;
+        })()}
+      </section>
+
       <SummaryPanel summary={summary} estimateTotals={estimateTotals} manifestPath={manifestPath} manifestCsvPath={manifestCsvPath} outputFolder={outputDisplay} onOpenPath={async (p) => { const r = await window.foxpix.openFolder(p); if (!r.ok) setStatus(`Open failed. ${r.error}`); }} />
     </section>
   </main>);

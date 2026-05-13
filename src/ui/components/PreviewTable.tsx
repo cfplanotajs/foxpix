@@ -8,7 +8,7 @@ function formatBytes(bytes: number): string {
   return `${(kb / 1024).toFixed(2)} MB`;
 }
 
-export default function PreviewTable({ rows }: { rows: PreviewRow[] }): JSX.Element {
+export default function PreviewTable({ rows, selectedRowKey, onSelectRow }: { rows: PreviewRow[]; selectedRowKey?: string | null; onSelectRow?: (key: string) => void }): JSX.Element {
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -29,7 +29,7 @@ export default function PreviewTable({ rows }: { rows: PreviewRow[] }): JSX.Elem
           <thead><tr><th>Original</th><th>Output</th><th>Current format</th><th>Target format</th><th>Current size</th><th>Expected size</th><th>Savings</th><th>Status</th></tr></thead>
           <tbody>
             {filtered.map((row) => (
-              <tr key={`${row.originalFilename}-${row.outputFilename}`}>
+              <tr key={`${row.originalFilename}-${row.outputFilename}`} className={selectedRowKey === `${row.originalFilename}-${row.outputFilename}` ? 'selected-row' : ''} onClick={() => onSelectRow?.(`${row.originalFilename}-${row.outputFilename}`)}>
                 <td className="mono" title={row.originalFilename}>{row.originalFilename}</td>
                 <td className="file-emphasis" title={row.outputFilename}>{row.outputFilename}</td>
                 <td><span className="pill">{row.sourceFormat.toUpperCase()}</span></td><td><span className="pill">{row.targetFormat.toUpperCase() === 'JPEG' ? 'JPG' : row.targetFormat.toUpperCase()}</span></td><td>{formatBytes(row.originalSize)}</td><td>{row.estimatedOutputSize ? formatBytes(row.estimatedOutputSize) : '—'}</td><td>{typeof row.estimatedSavedPercent === 'number' ? `${row.estimatedSavedPercent}%` : '—'}</td>

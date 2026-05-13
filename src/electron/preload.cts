@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('foxpix', {
   preview: (options: unknown) => ipcRenderer.invoke('foxpix:preview', options),
   process: (options: unknown) => ipcRenderer.invoke('foxpix:process', options),
   estimateSizes: (options: unknown) => ipcRenderer.invoke('foxpix:estimateSizes', options),
+  generateImagePreview: (payload: unknown) => ipcRenderer.invoke('foxpix:generateImagePreview', payload),
   openFolder: (folderPath: string) => ipcRenderer.invoke('foxpix:openFolder', folderPath) as Promise<{ ok: true } | { ok: false; error: string }>,
   loadSettings: () => ipcRenderer.invoke('foxpix:loadSettings'),
   saveSettings: (settings: unknown) => ipcRenderer.invoke('foxpix:saveSettings', settings),
