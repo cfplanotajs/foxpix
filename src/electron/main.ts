@@ -15,6 +15,7 @@ import type { RenamePlanItem } from '../types/index.js';
 import { normalizeOptions, type GuiOptionsLike } from './normalizeOptions.js';
 import { resolveDroppedItems } from './droppedItems.js';
 import { filterDiscoveredFilesByIncludedPaths } from '../core/includedPaths.js';
+import { createThumbnails } from '../core/thumbnail.js';
 
 type GuiOptions = GuiOptionsLike;
 
@@ -225,6 +226,10 @@ app.whenReady().then(() => {
     } catch (error) {
       return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
     }
+  });
+
+  ipcMain.handle('foxpix:getThumbnails', async (_event: unknown, payload: { sourcePaths: string[] }) => {
+    return createThumbnails(payload.sourcePaths);
   });
 });
 

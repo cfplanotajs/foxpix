@@ -66,3 +66,6 @@ thead th { position: sticky; top: 0; background: #f8fafc; }
 
 .skipped-row { opacity: 0.55; }
 .status-skipped { background:#f1f5f9; color:#475569; }
+
+.thumb-box{width:40px;height:40px;background:repeating-conic-gradient(#ddd 0% 25%,#f6f6f6 0% 50%) 50%/12px 12px;display:flex;align-items:center;justify-content:center;border-radius:6px;overflow:hidden}
+.thumb-img{max-width:40px;max-height:40px;display:block}

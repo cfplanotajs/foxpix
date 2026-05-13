@@ -213,6 +213,7 @@ npm run start:gui
 - Bulk format controls apply to **included rows only**.
 - Skipped rows are not processed.
 - Warning/error views help catch JPEG transparency issues before processing.
+- Preview table thumbnails are generated locally in Electron for visual review and are not written to disk.
 
 ### GUI workflow
 
