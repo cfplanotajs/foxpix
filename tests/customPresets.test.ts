@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getPresetMatchState, mergeImportedPresets, normalizePresetName, parsePresetPack, savePreset, serializePresetPack } from '../src/ui/customPresets.js';
+import { getPresetDisplayName, getPresetMatchState, mergeImportedPresets, normalizePresetName, parsePresetPack, savePreset, serializePresetPack } from '../src/ui/customPresets.js';
 
 const options = { pattern: '{name}', quality: 80, alphaQuality: 99, effort: 3, lossless: false, keepMetadata: false, recursive: true, outputFormat: 'webp' as const };
 
@@ -25,6 +25,17 @@ describe('custom presets', () => {
     expect(same.modified).toBe(false);
     const changed = getPresetMatchState({ ...options, quality: 90 }, `custom:${id}`, saved.presets as any);
     expect(changed.modified).toBe(true);
+  });
+  it('resolves friendly built-in and custom names', () => {
+    expect(getPresetDisplayName('shopify-transparent', [])).toBe('Shopify transparent assets');
+    const saved = savePreset([], 'Amazon PDP', options);
+    expect(getPresetDisplayName(`custom:${saved.saved!.id}`, saved.presets as any)).toBe('Custom: Amazon PDP');
+  });
+  it('modified label uses friendly built-in name and unknown fallback', () => {
+    const state = getPresetMatchState({ ...options, quality: 81 }, 'shopify-transparent', []);
+    expect(state.label).toBe('Modified from Shopify transparent assets');
+    const unknown = getPresetDisplayName('custom:missing', []);
+    expect(unknown).toBe('Custom settings');
   });
   it('export/import helpers work and merge duplicates safely', () => {
     const saved = savePreset([], 'Amazon', options).presets;

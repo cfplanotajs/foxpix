@@ -5,6 +5,13 @@ import { workflowPresets } from '../core/presets.js';
 export type CustomPresetSettings = { outputFormat: OutputFormat; pattern: string; prefix?: string; custom?: string; quality: number; alphaQuality: number; effort: number; maxWidth?: number; maxHeight?: number; lossless: boolean; keepMetadata: boolean; recursive: boolean; };
 export type CustomPreset = { id: string; name: string; createdAt: string; updatedAt: string; settings: CustomPresetSettings };
 export type PresetPack = { type: 'foxpix-presets'; version: 1; exportedAt: string; presets: CustomPreset[] };
+const builtinLabels = {
+  'web-safe-original': 'Web-safe original names',
+  'shopify-transparent': 'Shopify transparent assets',
+  'product-listing': 'Product listing images',
+  'tiny-web': 'Tiny web assets',
+  'lossless-archive': 'Lossless archive'
+} as const;
 const defaults: CustomPresetSettings = { outputFormat: 'webp', pattern: '{name}', quality: 85, alphaQuality: 100, effort: 4, lossless: false, keepMetadata: false, recursive: false };
 const toInt = (v: unknown, d: number, min: number, max: number): number => Number.isInteger(v) && Number(v) >= min && Number(v) <= max ? Number(v) : d;
 const toPosInt = (v: unknown): number | undefined => Number.isInteger(v) && Number(v) > 0 ? Number(v) : undefined;
@@ -15,7 +22,16 @@ export function sanitizeCustomPresets(input: unknown): CustomPreset[] { if (!Arr
 export function settingsFromOptions(options: GuiOptions): CustomPresetSettings { return normalizePresetSettings(options as Partial<CustomPresetSettings>); }
 export function presetSettingsEqual(a: CustomPresetSettings, b: CustomPresetSettings): boolean { return JSON.stringify(a) === JSON.stringify(b); }
 function isBuiltInPreset(value: WorkflowPresetId): value is Exclude<WorkflowPresetId, 'custom' | `custom:${string}`> { return !value.startsWith('custom') && value !== 'custom'; }
-export function getPresetMatchState(currentOptions: GuiOptions, selectedPreset: WorkflowPresetId, customPresets: CustomPreset[]): { label: string; modified: boolean } { if (selectedPreset === 'custom') return { label: 'Custom settings', modified: false }; const current = settingsFromOptions(currentOptions); if (selectedPreset.startsWith('custom:')) { const p = customPresets.find((x) => `custom:${x.id}` === selectedPreset); if (!p) return { label: 'Custom settings', modified: false }; const modified = !presetSettingsEqual(current, p.settings); return { label: modified ? `Modified from ${p.name}` : `Custom: ${p.name}`, modified }; } if (!isBuiltInPreset(selectedPreset)) return { label: 'Custom settings', modified: false }; const built = workflowPresets[selectedPreset]; const modified = !presetSettingsEqual(current, normalizePresetSettings(built)); return { label: modified ? `Modified from ${selectedPreset}` : selectedPreset, modified }; }
+export function getPresetDisplayName(selectedPreset: WorkflowPresetId, customPresets: CustomPreset[]): string {
+  if (selectedPreset === 'custom') return 'Custom settings';
+  if (selectedPreset.startsWith('custom:')) {
+    const p = customPresets.find((x) => `custom:${x.id}` === selectedPreset);
+    return p ? `Custom: ${p.name}` : 'Custom settings';
+  }
+  if (isBuiltInPreset(selectedPreset)) return builtinLabels[selectedPreset];
+  return 'Custom settings';
+}
+export function getPresetMatchState(currentOptions: GuiOptions, selectedPreset: WorkflowPresetId, customPresets: CustomPreset[]): { label: string; modified: boolean } { if (selectedPreset === 'custom') return { label: 'Custom settings', modified: false }; const current = settingsFromOptions(currentOptions); if (selectedPreset.startsWith('custom:')) { const p = customPresets.find((x) => `custom:${x.id}` === selectedPreset); if (!p) return { label: 'Custom settings', modified: false }; const modified = !presetSettingsEqual(current, p.settings); return { label: modified ? `Modified from Custom: ${p.name}` : `Custom: ${p.name}`, modified }; } if (!isBuiltInPreset(selectedPreset)) return { label: 'Custom settings', modified: false }; const built = workflowPresets[selectedPreset]; const modified = !presetSettingsEqual(current, normalizePresetSettings(built)); const label = getPresetDisplayName(selectedPreset, customPresets); return { label: modified ? `Modified from ${label}` : label, modified }; }
 export function savePreset(list: CustomPreset[], name: string, options: GuiOptions): { presets: CustomPreset[]; saved?: CustomPreset; status: string } { const check = normalizePresetName(name); if (!check.ok) return { presets: list, status: check.error }; const now = new Date().toISOString(); const found = list.find((p) => p.name.toLowerCase() === check.value.toLowerCase()); if (found) { const updated = { ...found, name: check.value, updatedAt: now, settings: settingsFromOptions(options) }; return { presets: list.map((p) => p.id === found.id ? updated : p), saved: updated, status: 'Preset updated.' }; } const created = { id: `preset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: check.value, createdAt: now, updatedAt: now, settings: settingsFromOptions(options) }; return { presets: [...list, created], saved: created, status: 'Preset saved.' }; }
 export function renamePreset(list: CustomPreset[], id: string, name: string): { presets: CustomPreset[]; status: string } { const check = normalizePresetName(name); if (!check.ok) return { presets: list, status: check.error }; return { presets: list.map((p) => p.id === id ? { ...p, name: check.value, updatedAt: new Date().toISOString() } : p), status: 'Preset renamed.' }; }
 export function deletePreset(list: CustomPreset[], id: string): CustomPreset[] { return list.filter((p) => p.id !== id); }
