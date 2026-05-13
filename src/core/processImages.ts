@@ -29,7 +29,7 @@ export async function processImages(plan: RenamePlanItem[], options: CliOptions)
       }
 
       const effort = Number.isInteger(options.effort) && (options.effort ?? 0) >= 0 && (options.effort ?? 0) <= 6 ? options.effort : 4;
-      const outputFormat = normalizeOutputFormat(options.outputFormat);
+      const outputFormat = normalizeOutputFormat(item.outputFormat ?? options.outputFormat);
       const sourceMetadata = await sharp(item.source.absolutePath, { failOn: 'none' }).metadata();
 
       if (outputFormat === 'jpeg' && hasAlpha(sourceMetadata)) {

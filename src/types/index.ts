@@ -40,6 +40,7 @@ export interface RenamePlanItem {
   source: DiscoveredFile;
   outputFilename: string;
   outputPath: string;
+  outputFormat?: OutputFormat;
 }
 
 export interface ProcessedFileResult {

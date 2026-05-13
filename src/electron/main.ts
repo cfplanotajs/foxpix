@@ -129,7 +129,8 @@ app.whenReady().then(() => {
       pattern: options.pattern,
       prefix: options.prefix,
       custom: options.custom,
-      outputFormat: options.outputFormat
+      outputFormat: options.outputFormat,
+      formatOverrides: rawOptions.formatOverrides
     });
 
     const rows = await Promise.all(plan.map(async (item: RenamePlanItem) => {
@@ -141,7 +142,7 @@ app.whenReady().then(() => {
         outputFilename: item.outputFilename,
         originalSize: info?.size ?? 0,
         sourceFormat: item.source.extension.replace('.', '').toLowerCase(),
-        targetFormat: options.outputFormat ?? 'webp',
+        targetFormat: item.outputFormat,
         status: 'planned'
       };
     }));
@@ -163,13 +164,13 @@ app.whenReady().then(() => {
         : [];
     const filtered = filterDiscoveredFilesByIncludedPaths(discovered, rawOptions.includedPaths);
     if (rawOptions.includedPaths && filtered.length === 0) throw new Error('Select at least one image to process.');
-    const plan = await buildRenamePlan({ files: filtered, outputFolder: options.output, pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat });
+    const plan = await buildRenamePlan({ files: filtered, outputFolder: options.output, pattern: options.pattern, prefix: options.prefix, custom: options.custom, outputFormat: options.outputFormat, formatOverrides: rawOptions.formatOverrides });
     return estimateImages(plan, options);
   });
 
-  ipcMain.handle('foxpix:generateImagePreview', async (_event: unknown, payload: { sourcePath: string; outputFilename?: string; options: GuiOptions }) => {
+  ipcMain.handle('foxpix:generateImagePreview', async (_event: unknown, payload: { sourcePath: string; outputFilename?: string; outputFormatOverride?: GuiOptions['outputFormat']; options: GuiOptions }) => {
     const options = normalizeOptions(payload.options);
-    return generateImagePreview(payload.sourcePath, options, payload.outputFilename);
+    return generateImagePreview(payload.sourcePath, options, payload.outputFilename, payload.outputFormatOverride);
   });
 
   ipcMain.handle('foxpix:process', async (_event: unknown, rawOptions: GuiOptions & { includedPaths?: string[] }) => {
@@ -187,7 +188,8 @@ app.whenReady().then(() => {
       pattern: options.pattern,
       prefix: options.prefix,
       custom: options.custom,
-      outputFormat: options.outputFormat
+      outputFormat: options.outputFormat,
+      formatOverrides: rawOptions.formatOverrides
     });
     const summary = await processImages(plan, options);
     const manifest = createManifest(options, summary);

@@ -62,4 +62,18 @@ describe('rename plan', () => {
     expect(plan[0].outputFilename).toBe('sample-image-001-2.avif');
     expect(plan[1].outputFilename).toBe('sample-image-002.avif');
   });
+
+  it('supports per-file format overrides in one plan', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-'));
+    const secondFile: DiscoveredFile = { ...baseFile, absolutePath: '/tmp/second.png', relativePath: 'second.png', name: 'Second' };
+    const plan = await buildRenamePlan({
+      files: [baseFile, secondFile],
+      outputFolder: dir,
+      pattern: '{name}',
+      outputFormat: 'webp',
+      formatOverrides: { [baseFile.absolutePath]: 'jpeg', [secondFile.absolutePath]: 'png' }
+    });
+    expect(plan[0].outputFilename.endsWith('.jpg')).toBe(true);
+    expect(plan[1].outputFilename.endsWith('.png')).toBe(true);
+  });
 });

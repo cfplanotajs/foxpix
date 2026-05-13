@@ -14,13 +14,13 @@ export interface ImagePreviewResult {
 function hasAlpha(meta: sharp.Metadata): boolean { return Boolean(meta.hasAlpha || (typeof meta.channels === 'number' && meta.channels >= 4)); }
 function toDataUrl(buffer: Buffer, mime: string): string { return `data:${mime};base64,${buffer.toString('base64')}`; }
 
-export async function generateImagePreview(sourcePath: string, options: CliOptions, outputFilename?: string): Promise<ImagePreviewResult> {
+export async function generateImagePreview(sourcePath: string, options: CliOptions, outputFilename?: string, outputFormatOverride?: OutputFormat): Promise<ImagePreviewResult> {
   try {
     const displayMax = 1200;
     const originalObj = await sharp(sourcePath, { failOn: 'none' }).rotate().resize({ width: displayMax, height: displayMax, fit: 'inside', withoutEnlargement: true }).png().toBuffer({ resolveWithObject: true });
     const srcMeta = await sharp(sourcePath, { failOn: 'none' }).metadata();
     const srcBytes = (await sharp(sourcePath, { failOn: 'none' }).toBuffer({ resolveWithObject: true })).info.size;
-    const fmt = normalizeOutputFormat(options.outputFormat);
+    const fmt = normalizeOutputFormat(outputFormatOverride ?? options.outputFormat);
     if (fmt === 'jpeg' && hasAlpha(srcMeta)) {
       return { sourcePath, outputFilename, original: { dataUrl: toDataUrl(originalObj.data, 'image/png'), format: srcMeta.format, width: originalObj.info.width, height: originalObj.info.height, bytes: srcBytes, hasAlpha: hasAlpha(srcMeta) }, error: 'JPEG does not support transparency. Choose WebP, AVIF, or PNG for transparent assets.' };
     }

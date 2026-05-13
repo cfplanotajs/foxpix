@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { normalizeOutputFormat, type CliOptions } from '../types/index.js';
+import { normalizeOutputFormat, type CliOptions, type OutputFormat } from '../types/index.js';
 import { samePhysicalPath } from '../core/pathSafety.js';
 
 export interface GuiOptionsLike {
@@ -19,6 +19,7 @@ export interface GuiOptionsLike {
   keepMetadata: boolean;
   outputFormat?: CliOptions['outputFormat'];
   includedPaths?: string[];
+  formatOverrides?: Record<string, OutputFormat>;
 }
 
 export function normalizeOptions(options: GuiOptionsLike): CliOptions {

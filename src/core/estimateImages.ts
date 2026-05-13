@@ -34,7 +34,7 @@ export async function estimateImages(plan: RenamePlanItem[], options: CliOptions
       if (options.maxWidth || options.maxHeight) pipeline = pipeline.resize({ width: options.maxWidth, height: options.maxHeight, fit: 'inside', withoutEnlargement: true });
       if (options.keepMetadata) pipeline = pipeline.keepMetadata();
       const srcMeta = await sharp(sourcePath, { failOn: 'none' }).metadata();
-      const outputFormat = normalizeOutputFormat(options.outputFormat);
+      const outputFormat = normalizeOutputFormat(item.outputFormat ?? options.outputFormat);
       if (outputFormat === 'jpeg' && hasAlpha(srcMeta)) throw new Error('JPEG does not support transparency. Choose WebP, AVIF, or PNG for transparent assets.');
       const effort = Number.isInteger(options.effort) && (options.effort ?? 0) >= 0 && (options.effort ?? 0) <= 6 ? options.effort : 4;
       const encoded = outputFormat === 'avif' ? await pipeline.avif({ quality: options.quality, effort }).toBuffer({ resolveWithObject: true })
@@ -47,7 +47,7 @@ export async function estimateImages(plan: RenamePlanItem[], options: CliOptions
       const estimatedSavedPercent = originalSize > 0 ? Number(((estimatedSavedBytes / originalSize) * 100).toFixed(2)) : 0;
       rows.push({ id: sourcePath, sourcePath, originalFilename: item.source.relativePath, outputFilename: item.outputFilename, sourceFormat: item.source.extension.replace('.', ''), targetFormat: outputFormat, originalSize, estimatedOutputSize, estimatedSavedBytes, estimatedSavedPercent, width: encoded.info.width ?? 0, height: encoded.info.height ?? 0, status: 'estimated' });
     } catch (error) {
-      rows.push({ id: sourcePath, sourcePath, originalFilename: item.source.relativePath, outputFilename: item.outputFilename, sourceFormat: item.source.extension.replace('.', ''), targetFormat: normalizeOutputFormat(options.outputFormat), originalSize: fallbackOriginalSize, width: 0, height: 0, status: 'failed', error: error instanceof Error ? error.message : String(error) });
+      rows.push({ id: sourcePath, sourcePath, originalFilename: item.source.relativePath, outputFilename: item.outputFilename, sourceFormat: item.source.extension.replace('.', ''), targetFormat: normalizeOutputFormat(item.outputFormat ?? options.outputFormat), originalSize: fallbackOriginalSize, width: 0, height: 0, status: 'failed', error: error instanceof Error ? error.message : String(error) });
     }
   }
   const success = rows.filter((r) => r.status === 'estimated');

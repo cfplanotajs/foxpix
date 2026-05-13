@@ -198,6 +198,15 @@ npm run start:gui
 - Estimation does **not** write output files or manifests.
 - Actual processed sizes can differ slightly; final processing summary is the source of truth.
 
+### Per-file format overrides
+
+- Global output format still applies by default to all rows.
+- In Preview, each row can override target format (WebP/AVIF/JPEG/PNG) or follow global.
+- Mixed folders can be processed with mixed targets in one run.
+- Estimate Sizes and Process both respect row overrides.
+- Skipped rows are not estimated or processed.
+- JPEG does not support transparency; transparent JPEG-target rows fail individually with a clear message.
+
 ### GUI workflow
 
 1. Select input folder.

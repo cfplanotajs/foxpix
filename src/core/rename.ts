@@ -11,6 +11,7 @@ export interface RenameOptions {
   prefix?: string;
   custom?: string;
   outputFormat?: OutputFormat;
+  formatOverrides?: Record<string, OutputFormat>;
 }
 
 function withPadding(index: number): string {
@@ -53,7 +54,8 @@ export async function buildRenamePlan(options: RenameOptions): Promise<RenamePla
   for (const [i, file] of options.files.entries()) {
     const initial = createBaseName(file, i + 1, options.pattern, options.prefix, options.custom);
     let attempt = 1;
-    const ext = extensionForOutputFormat(normalizeOutputFormat(options.outputFormat));
+    const outputFormat = normalizeOutputFormat(options.formatOverrides?.[file.absolutePath] ?? options.outputFormat);
+    const ext = extensionForOutputFormat(outputFormat);
     let filename = `${initial}.${ext}`;
 
     while (used.has(filename) || (await fileExists(path.join(options.outputFolder, filename)))) {
@@ -62,7 +64,7 @@ export async function buildRenamePlan(options: RenameOptions): Promise<RenamePla
     }
 
     used.add(filename);
-    plan.push({ source: file, outputFilename: filename, outputPath: path.join(options.outputFolder, filename) });
+    plan.push({ source: file, outputFilename: filename, outputPath: path.join(options.outputFolder, filename), outputFormat });
   }
 
   return plan;
