@@ -186,14 +186,15 @@ Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or 
 
 
 
-## Team workflow
+## Team usage
 
-1. Drop or choose a folder.
-2. Pick a preset.
-3. Preview names.
-4. Process.
-5. Open output folder.
-6. Upload optimized assets to the web/CDN.
+1. Launch FoxPix.
+2. Drop a folder or choose image files.
+3. Pick a preset.
+4. Preview web-safe names.
+5. Process.
+6. Open output folder.
+7. Upload optimized assets to the web project/CDN.
 
 
 ## Processing one-off additions

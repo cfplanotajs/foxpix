@@ -1,7 +1,7 @@
 {
   "name": "foxpix",
   "version": "0.1.0",
-  "description": "Local batch image optimizer CLI for web-production workflows",
+  "description": "Local desktop and CLI batch image optimizer for web-production workflows",
   "type": "module",
   "main": "dist-electron/electron/main.js",
   "scripts": {
@@ -68,5 +68,6 @@
         "portable"
       ]
     }
-  }
+  },
+  "author": "FoxPix Team <team@example.com>"
 }
