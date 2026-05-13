@@ -18,6 +18,13 @@ export interface GuiOptions {
   outputFormat?: OutputFormat;
 }
 
+export interface StoredGuiSettings extends Partial<GuiOptions> {
+  outputTouched?: boolean;
+  selectedPreset?: string;
+  recentInputs?: string[];
+  recentOutputs?: string[];
+}
+
 export interface PreviewRow {
   id: string;
   sourcePath: string;

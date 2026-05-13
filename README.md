@@ -249,6 +249,7 @@ npm run start:gui
 
 - Shortcuts: `Ctrl+O` choose folder, `Ctrl+Shift+O` choose files, `Ctrl+P` preview, `Ctrl+E` estimate, `Ctrl+Enter` process included, `Esc` clears preview image.
 - Recent input/output folders are saved locally for faster repeat runs (up to 8 each).
+- Open/copy actions report success or readable failure in the status area.
 
 Privacy note: everything runs locally. No cloud upload, accounts, telemetry, or remote processing.
 

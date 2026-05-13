@@ -7,3 +7,8 @@ export function pushRecentPath(list: string[] | undefined, value: string, max = 
 export function clearRecentPaths(): string[] {
   return [];
 }
+
+export function sanitizeRecentPaths(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === 'string').slice(0, 8);
+}

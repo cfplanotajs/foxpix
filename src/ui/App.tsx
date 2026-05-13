@@ -4,14 +4,15 @@ import SettingsPanel from './components/SettingsPanel.js';
 import PreviewTable from './components/PreviewTable.js';
 import SummaryPanel from './components/SummaryPanel.js';
 import ProgressPanel from './components/ProgressPanel.js';
-import type { PreviewRow, GuiOptions, WorkflowPresetId } from './types.js';
+import type { PreviewRow, GuiOptions, WorkflowPresetId, StoredGuiSettings } from './types.js';
 import { DEFAULT_OUTPUT_FORMAT, normalizeOutputFormat, type ProcessingSummary } from '../types/index.js';
 import { workflowPresets } from '../core/presets.js';
-import { hasIncludedRows } from './selectionState.js';
 import { applyBulkIncludedOverrides, getEffectiveOutputFormat, resetAllOverrides } from './formatOverrides.js';
 import { computeReviewCounts } from './reviewState.js';
 import { buildRecommendations, computeFormatMix } from './recommendations.js';
 import { clearRecentPaths, pushRecentPath } from './recentPaths.js';
+import { sanitizeRecentPaths } from './recentPaths.js';
+import { getActionAvailability } from './actionAvailability.js';
 
 const defaults: GuiOptions = { input: '', filePaths: [], output: '', prefix: '', pattern: '{name}', custom: '', quality: 85, alphaQuality: 100, effort: 4, lossless: false, recursive: false, keepMetadata: false, outputFormat: DEFAULT_OUTPUT_FORMAT };
 const bridgeMsg = 'FoxPix desktop bridge is unavailable. Launch the app with npm run dev:gui or npm run start:gui, not directly in a browser.';
@@ -47,23 +48,24 @@ export default function App(): JSX.Element {
   const bridgeError = bridgeAvailable ? null : bridgeMsg;
   const mode: 'folder' | 'files' | 'none' = options.filePaths && options.filePaths.length > 0 ? 'files' : options.input ? 'folder' : 'none';
 
-  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved: any) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved, outputFormat: normalizeOutputFormat(saved.outputFormat) })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); setRecentInputs(saved.recentInputs ?? []); setRecentOutputs(saved.recentOutputs ?? []); }).catch(() => {}); }, [bridgeAvailable]);
-  useEffect(() => { if (!bridgeAvailable) return; const t = setTimeout(() => { void window.foxpix.saveSettings({ ...options, outputTouched, selectedPreset, recentInputs, recentOutputs } as any); }, 200); return () => clearTimeout(t); }, [bridgeAvailable, options, outputTouched, selectedPreset, recentInputs, recentOutputs]);
+  useEffect(() => { if (!bridgeAvailable) return; void window.foxpix.loadSettings().then((saved: StoredGuiSettings | null) => { if (!saved) return; setOptions((prev) => ({ ...prev, ...saved, outputFormat: normalizeOutputFormat(saved.outputFormat) })); if (saved.outputTouched) setOutputTouched(true); if (saved.selectedPreset) setSelectedPreset(saved.selectedPreset as WorkflowPresetId); setRecentInputs(sanitizeRecentPaths(saved.recentInputs)); setRecentOutputs(sanitizeRecentPaths(saved.recentOutputs)); }).catch(() => {}); }, [bridgeAvailable]);
+  useEffect(() => { if (!bridgeAvailable) return; const t = setTimeout(() => { void window.foxpix.saveSettings({ ...options, outputTouched, selectedPreset, recentInputs, recentOutputs }); }, 200); return () => clearTimeout(t); }, [bridgeAvailable, options, outputTouched, selectedPreset, recentInputs, recentOutputs]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const t = e.target as HTMLElement | null;
       if (t && ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)) return;
-      if (!bridgeAvailable || busy) return;
+      const availability = getActionAvailability({ bridgeAvailable, busy, hasSource: Boolean(options.input || (options.filePaths?.length ?? 0) > 0), hasPreviewRows: previewRows.length > 0, includedCount: previewRows.filter((r) => includedMap[r.id] !== false).length, hasInvalidSettings: Boolean(validationError) });
       if (e.ctrlKey && e.key.toLowerCase() === 'o' && !e.shiftKey) { e.preventDefault(); void pickInput(); }
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'o') { e.preventDefault(); void pickFiles(); }
-      if (e.ctrlKey && e.key.toLowerCase() === 'p') { e.preventDefault(); void handlePreview(); }
-      if (e.ctrlKey && e.key.toLowerCase() === 'e') { e.preventDefault(); void handleEstimate(); }
-      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); void handleProcess(); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'p' && availability.preview.enabled) { e.preventDefault(); void handlePreview(); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'e' && availability.estimate.enabled) { e.preventDefault(); void handleEstimate(); }
+      if (e.ctrlKey && e.key === 'Enter' && availability.process.enabled) { e.preventDefault(); void handleProcess(); }
       if (e.key === 'Escape') setStudioPreview(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [bridgeAvailable, busy, options, previewRows, includedMap, validationError]);
+  const availability = getActionAvailability({ bridgeAvailable, busy, hasSource: Boolean(options.input || (options.filePaths?.length ?? 0) > 0), hasPreviewRows: previewRows.length > 0, includedCount: previewRows.filter((r) => includedMap[r.id] !== false).length, hasInvalidSettings: Boolean(validationError) });
   useEffect(() => {
     if (!bridgeAvailable || previewRows.length === 0) return;
     const missing = previewRows.filter((r) => !thumbnailMap[r.id]).map((r) => r.sourcePath);
@@ -153,9 +155,10 @@ export default function App(): JSX.Element {
       <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop a folder or multiple image files</strong><p>Drag a folder for folder mode, or drag supported files for selected-files mode.</p></div>
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} onPresetChange={applyPreset} />
       <div className="actions sticky-actions">
-        <button type="button" onClick={() => void handlePreview()} disabled={busy || !bridgeAvailable || !(options.input || (options.filePaths && options.filePaths.length > 0)) || Boolean(validationError)} className="secondary">Preview (dry run)</button><span className="hint">Checks names and formats before writing.</span>
-        <button type="button" onClick={() => void handleEstimate()} disabled={busy || !bridgeAvailable || !hasIncludedRows(previewRows, includedMap) || Boolean(validationError)} className="secondary">Estimate Sizes</button><span className="hint">In-memory only. Writes no files.</span>
-        <button type="button" onClick={() => void handleProcess()} disabled={busy || !bridgeAvailable || !hasIncludedRows(previewRows, includedMap) || Boolean(validationError)} className="primary">Process Included</button><span className="hint">Writes optimized files and manifests.</span>
+        <button title="Ctrl+P" type="button" onClick={() => void handlePreview()} disabled={!availability.preview.enabled} className="secondary">Preview (dry run)</button><span className="hint">Checks names and formats before writing. (Ctrl+P)</span>
+        <button title="Ctrl+E" type="button" onClick={() => void handleEstimate()} disabled={!availability.estimate.enabled} className="secondary">Estimate Sizes</button><span className="hint">In-memory only. Writes no files. (Ctrl+E)</span>
+        <button title="Ctrl+Enter" type="button" onClick={() => void handleProcess()} disabled={!availability.process.enabled} className="primary">Process Included</button><span className="hint">Writes optimized files and manifests. (Ctrl+Enter)</span>
+        {!availability.preview.enabled || !availability.estimate.enabled || !availability.process.enabled ? <p className="hint warn">{availability.preview.reason ?? availability.estimate.reason ?? availability.process.reason}</p> : null}
         <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
       </div>
       <section className="panel"><h3>Recent</h3><p className="hint">Inputs</p><div className="actions">{recentInputs.map((p) => <button key={p} type="button" className="secondary" onClick={() => setOptions((prev) => ({ ...prev, input: p, filePaths: [] }))}>{p}</button>)}</div><p className="hint">Outputs</p><div className="actions">{recentOutputs.map((p) => <button key={p} type="button" className="secondary" onClick={() => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }}>{p}</button>)}</div><button type="button" className="secondary" onClick={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); }}>Clear recent</button></section>
@@ -198,7 +201,7 @@ export default function App(): JSX.Element {
         })()}
       </section>
 
-      <SummaryPanel summary={summary} estimateTotals={estimateTotals} manifestPath={manifestPath} manifestCsvPath={manifestCsvPath} outputFolder={outputDisplay} onOpenPath={async (p) => { const r = await window.foxpix.openFolder(p); if (!r.ok) setStatus(`Open failed. ${r.error}`); }} />
+      <SummaryPanel summary={summary} estimateTotals={estimateTotals} manifestPath={manifestPath} manifestCsvPath={manifestCsvPath} outputFolder={outputDisplay} onOpenPath={async (p) => { const r = await window.foxpix.openFolder(p); if (!r.ok) throw new Error(r.error); }} onFeedback={(m) => setStatus(m)} />
       <section className="panel"><p className="hint">FoxPix • Local-only • Images are processed on this computer and are not uploaded.</p></section>
     </section>
   </main>);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clearRecentPaths, pushRecentPath } from '../src/ui/recentPaths.js';
+import { clearRecentPaths, pushRecentPath, sanitizeRecentPaths } from '../src/ui/recentPaths.js';
 
 describe('recent paths', () => {
   it('dedupes and keeps most recent first', () => {
@@ -11,5 +11,9 @@ describe('recent paths', () => {
   });
   it('clears', () => {
     expect(clearRecentPaths()).toEqual([]);
+  });
+  it('sanitizes invalid recents', () => {
+    expect(sanitizeRecentPaths(['a', 1, null])).toEqual(['a']);
+    expect(sanitizeRecentPaths(undefined)).toEqual([]);
   });
 });
