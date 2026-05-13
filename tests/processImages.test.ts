@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import sharp from 'sharp';
 import { processImages } from '../src/core/processImages.js';
+import { buildRenamePlan } from '../src/core/rename.js';
 import type { CliOptions, DiscoveredFile, RenamePlanItem } from '../src/types/index.js';
 
 async function createTransparentPng(filePath: string): Promise<void> {
@@ -312,4 +313,45 @@ describe('processImages integration', () => {
     expect(outputMeta.orientation === undefined || outputMeta.orientation === 1).toBe(true);
   });
 
+  it('processes mixed per-file output formats from rename plan overrides', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-mixed-fmt-'));
+    const outputDir = path.join(dir, 'optimized');
+    const a = path.join(dir, 'a.png');
+    const b = path.join(dir, 'b.jpg');
+    await createTransparentPng(a);
+    await sharp({ create: { width: 40, height: 20, channels: 3, background: { r: 10, g: 30, b: 90 } } }).jpeg().toFile(b);
+    const files: DiscoveredFile[] = [
+      { absolutePath: a, relativePath: 'a.png', name: 'a', extension: '.png', folderName: 'input' },
+      { absolutePath: b, relativePath: 'b.jpg', name: 'b', extension: '.jpg', folderName: 'input' }
+    ];
+    const plan = await buildRenamePlan({ files, outputFolder: outputDir, pattern: '{name}', outputFormat: 'webp', formatOverrides: { [a]: 'png', [b]: 'jpeg' } });
+    const options: CliOptions = { input: dir, output: outputDir, pattern: '{name}', quality: 85, alphaQuality: 100, lossless: false, recursive: false, dryRun: false, keepMetadata: false, outputFormat: 'webp' };
+    const summary = await processImages(plan, options);
+    expect(summary.succeeded).toBe(2);
+    expect(summary.files.map((f) => f.outputFilename)).toEqual(plan.map((p) => p.outputFilename));
+    expect(plan[0].outputFilename.endsWith('.png')).toBe(true);
+    expect(plan[1].outputFilename.endsWith('.jpg')).toBe(true);
+  });
+
+  it('fails only transparent jpeg override row and continues others', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-mixed-jpeg-fail-'));
+    const outputDir = path.join(dir, 'optimized');
+    const transparent = path.join(dir, 'transparent.png');
+    const normal = path.join(dir, 'normal.jpg');
+    await createTransparentPng(transparent);
+    await sharp({ create: { width: 50, height: 50, channels: 3, background: { r: 160, g: 100, b: 30 } } }).jpeg().toFile(normal);
+    const files: DiscoveredFile[] = [
+      { absolutePath: transparent, relativePath: 'transparent.png', name: 'transparent', extension: '.png', folderName: 'input' },
+      { absolutePath: normal, relativePath: 'normal.jpg', name: 'normal', extension: '.jpg', folderName: 'input' }
+    ];
+    const plan = await buildRenamePlan({ files, outputFolder: outputDir, pattern: '{name}', outputFormat: 'webp', formatOverrides: { [transparent]: 'jpeg' } });
+    const options: CliOptions = { input: dir, output: outputDir, pattern: '{name}', quality: 85, alphaQuality: 100, lossless: false, recursive: false, dryRun: false, keepMetadata: false, outputFormat: 'webp' };
+    const summary = await processImages(plan, options);
+    expect(summary.succeeded).toBe(1);
+    expect(summary.failed).toBe(1);
+    const failed = summary.files.find((f) => f.status === 'failed');
+    expect(failed?.error).toContain('JPEG does not support transparency');
+    expect((failed?.originalSize ?? 0)).toBeGreaterThan(0);
+    expect(summary.savedBytes).toBe(summary.succeededOriginalBytes - summary.outputBytes);
+  });
 });
