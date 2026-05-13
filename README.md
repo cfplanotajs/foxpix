@@ -170,6 +170,14 @@ npm run build:gui
 npm run start:gui
 ```
 
+### Output format (GUI)
+
+- WebP is the default and recommended format.
+- AVIF may be smaller but slower to encode.
+- JPEG is best for non-transparent photos.
+- PNG is lossless and transparency-safe.
+- JPEG does not support transparency; FoxPix blocks transparent files instead of flattening them.
+
 ### GUI workflow
 
 1. Select input folder.

@@ -132,6 +132,8 @@ app.whenReady().then(() => {
         originalFilename: item.source.relativePath,
         outputFilename: item.outputFilename,
         originalSize: info?.size ?? 0,
+        sourceFormat: item.source.extension.replace('.', '').toLowerCase(),
+        targetFormat: options.outputFormat ?? 'webp',
         status: 'planned'
       };
     }));

@@ -22,6 +22,8 @@ export interface PreviewRow {
   originalFilename: string;
   outputFilename: string;
   originalSize: number;
+  sourceFormat: string;
+  targetFormat: OutputFormat;
   status: 'planned';
 }
 
