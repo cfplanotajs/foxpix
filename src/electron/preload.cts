@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('foxpix', {
   openFolder: (folderPath: string) => ipcRenderer.invoke('foxpix:openFolder', folderPath) as Promise<{ ok: true } | { ok: false; error: string }>,
   loadSettings: () => ipcRenderer.invoke('foxpix:loadSettings'),
   saveSettings: (settings: unknown) => ipcRenderer.invoke('foxpix:saveSettings', settings),
+  exportPresets: (payload: unknown) => ipcRenderer.invoke('foxpix:exportPresets', payload),
+  importPresets: () => ipcRenderer.invoke('foxpix:importPresets'),
   resolveDroppedItems: async (files: File[] | FileList) => {
     const paths = Array.from(files)
       .map((file) => webUtils.getPathForFile(file))

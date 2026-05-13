@@ -14,6 +14,8 @@ declare global {
       getThumbnails: (payload: { sourcePaths: string[] }) => Promise<Array<{ sourcePath: string; dataUrl?: string; width?: number; height?: number; hasAlpha?: boolean; error?: string }>>;
       loadSettings: () => Promise<StoredGuiSettings | null>;
       saveSettings: (settings: StoredGuiSettings) => Promise<{ ok: true } | { ok: false; error: string }>;
+      exportPresets: (payload: unknown) => Promise<{ ok: true } | { ok: false; error: string }>;
+      importPresets: () => Promise<{ ok: true; rawJson: string } | { ok: false; error: string }>;
       resolveDroppedItems: (files: File[] | FileList) => Promise<{ kind: 'folder'; path: string } | { kind: 'files'; paths: string[] } | { kind: 'invalid'; error: string }>;
       openFolder: (folderPath: string) => Promise<{ ok: true } | { ok: false; error: string }>; 
     };

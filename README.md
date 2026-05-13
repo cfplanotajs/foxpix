@@ -242,14 +242,6 @@ npm run start:gui
 - Presets include workflow settings (format, naming, quality, alpha quality, effort, resize, lossless, metadata, recursive).
 - Presets do **not** include source/output folders, selected files, preview rows, or per-row include/override state.
 - Custom presets are stored locally on this computer and can be renamed or deleted in-app.
-2. Select output folder (or use default `<input>/optimized`).
-3. Set prefix/pattern and compression settings.
-4. Click **Preview (dry run)** to review planned output names.
-5. Optionally drag-and-drop a folder into the drop zone to set input quickly.
-6. Pick a built-in workflow preset or custom settings.
-7. Click **Process** to run conversion and write manifest files (`manifest.json`, `manifest.csv`).
-8. Settings are remembered between app launches.
-6. Review summary and failed-file messages, then open output folder.
 
 ### Recommended usability workflow
 

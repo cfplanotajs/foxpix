@@ -9,12 +9,15 @@ interface SettingsPanelProps {
   onChange: (next: GuiOptions) => void;
   disabled: boolean;
   selectedPreset: WorkflowPresetId;
+  presetLabel: string;
   onPresetChange: (preset: WorkflowPresetId) => void;
   customPresets: CustomPreset[];
   onCustomPresetSelect: (id: string) => void;
   onSavePreset: (name: string) => void;
   onRenamePreset: (id: string, name: string) => void;
   onDeletePreset: (id: string) => void;
+  onExportPresets: () => Promise<void>;
+  onImportPresets: () => Promise<void>;
 }
 
 function exampleName(options: GuiOptions): string {
@@ -33,11 +36,11 @@ const presetHelp: Record<Exclude<WorkflowPresetId, 'custom'>, string> = {
   'lossless-archive': 'Lossless export profile for archival or no-quality-loss workflows.'
 };
 
-export default function SettingsPanel({ options, onChange, disabled, selectedPreset, onPresetChange, customPresets, onCustomPresetSelect, onSavePreset, onRenamePreset, onDeletePreset }: SettingsPanelProps): JSX.Element {
+export default function SettingsPanel({ options, onChange, disabled, selectedPreset, presetLabel, onPresetChange, customPresets, onCustomPresetSelect, onSavePreset, onRenamePreset, onDeletePreset, onExportPresets, onImportPresets }: SettingsPanelProps): JSX.Element {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [presetName, setPresetName] = useState('');
   const presetText = selectedPreset === 'custom' || selectedPreset.startsWith('custom:') ? 'Custom settings mode. Adjust values below.' : presetHelp[selectedPreset];
-  return (<section className="panel"><h2>Rename + compression settings</h2><p className="hint">{presetText}</p><h3>Basic</h3><div className="grid">
+  return (<section className="panel"><h2>Rename + compression settings</h2><p className="hint">{presetText}</p><p className="pill">{presetLabel}</p><h3>Basic</h3><div className="grid">
     <label>Preset<select disabled={disabled} value={selectedPreset} onChange={(e) => {
       const v = e.target.value;
       if (v.startsWith('custom:')) onCustomPresetSelect(v.slice(7));
@@ -68,7 +71,7 @@ export default function SettingsPanel({ options, onChange, disabled, selectedPre
   </div><div className="checks"><label><input disabled={disabled} type="checkbox" checked={options.recursive} onChange={(e) => onChange({ ...options, recursive: e.target.checked })} /> Recursive</label><label><input disabled={disabled} type="checkbox" checked={options.lossless} onChange={(e) => onChange({ ...options, lossless: e.target.checked })} /> Lossless</label><label><input disabled={disabled} type="checkbox" checked={options.keepMetadata} onChange={(e) => onChange({ ...options, keepMetadata: e.target.checked })} /> Keep metadata</label></div></div> : null}
   <div className="panel">
     <h3>Custom Presets</h3>
-    <div className="actions"><input value={presetName} onChange={(e) => setPresetName(e.target.value)} placeholder="Preset name" /><button type="button" className="secondary" onClick={() => { onSavePreset(presetName); setPresetName(''); }}>Save as preset</button></div>
+    <div className="actions"><input value={presetName} onChange={(e) => setPresetName(e.target.value)} placeholder="Preset name" /><button type="button" className="secondary" onClick={() => { onSavePreset(presetName); setPresetName(''); }}>Save as preset</button><button type="button" className="secondary" onClick={() => void onImportPresets()}>Import presets</button><button type="button" className="secondary" onClick={() => void onExportPresets()}>Export presets</button></div>
     {customPresets.map((p) => <div key={p.id} className="actions"><span className="pill">{p.name}</span><button type="button" className="secondary" onClick={() => { const next = window.prompt('Rename preset', p.name); if (next !== null) onRenamePreset(p.id, next); }}>Rename</button><button type="button" className="secondary" onClick={() => { if (window.confirm(`Delete preset "${p.name}"?`)) onDeletePreset(p.id); }}>Delete</button></div>)}
   </div>
   {(options.outputFormat ?? 'webp') === 'jpeg' ? <p className="hint warn">JPEG does not support transparency. Transparent files will be blocked. Use WebP, AVIF, or PNG for transparent assets.</p> : null}<p className="hint">Example: "My Cute Animal.png" → "{exampleName(options)}"</p><p className="hint">Quality: Higher quality usually means larger files. Keep metadata: Usually off for web assets.</p></section>);

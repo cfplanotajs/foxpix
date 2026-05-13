@@ -1,78 +1,24 @@
 import { normalizeOutputFormat, type OutputFormat } from '../types/index.js';
-import type { GuiOptions } from './types.js';
+import type { GuiOptions, WorkflowPresetId } from './types.js';
+import { workflowPresets } from '../core/presets.js';
 
-export type CustomPresetSettings = {
-  outputFormat: OutputFormat;
-  pattern: string;
-  prefix?: string;
-  custom?: string;
-  quality: number;
-  alphaQuality: number;
-  effort: number;
-  maxWidth?: number;
-  maxHeight?: number;
-  lossless: boolean;
-  keepMetadata: boolean;
-  recursive: boolean;
-};
-
+export type CustomPresetSettings = { outputFormat: OutputFormat; pattern: string; prefix?: string; custom?: string; quality: number; alphaQuality: number; effort: number; maxWidth?: number; maxHeight?: number; lossless: boolean; keepMetadata: boolean; recursive: boolean; };
 export type CustomPreset = { id: string; name: string; createdAt: string; updatedAt: string; settings: CustomPresetSettings };
-
+export type PresetPack = { type: 'foxpix-presets'; version: 1; exportedAt: string; presets: CustomPreset[] };
 const defaults: CustomPresetSettings = { outputFormat: 'webp', pattern: '{name}', quality: 85, alphaQuality: 100, effort: 4, lossless: false, keepMetadata: false, recursive: false };
 const toInt = (v: unknown, d: number, min: number, max: number): number => Number.isInteger(v) && Number(v) >= min && Number(v) <= max ? Number(v) : d;
 const toPosInt = (v: unknown): number | undefined => Number.isInteger(v) && Number(v) > 0 ? Number(v) : undefined;
 
-export function normalizePresetSettings(input: Partial<CustomPresetSettings> | undefined): CustomPresetSettings {
-  return {
-    outputFormat: normalizeOutputFormat(input?.outputFormat),
-    pattern: typeof input?.pattern === 'string' && input.pattern.trim() ? input.pattern : defaults.pattern,
-    prefix: typeof input?.prefix === 'string' ? input.prefix : undefined,
-    custom: typeof input?.custom === 'string' ? input.custom : undefined,
-    quality: toInt(input?.quality, 85, 1, 100),
-    alphaQuality: toInt(input?.alphaQuality, 100, 0, 100),
-    effort: toInt(input?.effort, 4, 0, 6),
-    maxWidth: toPosInt(input?.maxWidth),
-    maxHeight: toPosInt(input?.maxHeight),
-    lossless: Boolean(input?.lossless),
-    keepMetadata: Boolean(input?.keepMetadata),
-    recursive: Boolean(input?.recursive)
-  };
-}
-
-export function sanitizeCustomPresets(input: unknown): CustomPreset[] {
-  if (!Array.isArray(input)) return [];
-  return input.map((item, idx) => {
-    const row = (item ?? {}) as Record<string, unknown>;
-    const now = new Date().toISOString();
-    return {
-      id: typeof row.id === 'string' && row.id ? row.id : `preset-${idx + 1}`,
-      name: typeof row.name === 'string' && row.name.trim() ? row.name.trim() : 'Untitled preset',
-      createdAt: typeof row.createdAt === 'string' && row.createdAt ? row.createdAt : now,
-      updatedAt: typeof row.updatedAt === 'string' && row.updatedAt ? row.updatedAt : now,
-      settings: normalizePresetSettings(row.settings as Partial<CustomPresetSettings>)
-    };
-  });
-}
-
-export function settingsFromOptions(options: GuiOptions): CustomPresetSettings {
-  return normalizePresetSettings(options as Partial<CustomPresetSettings>);
-}
-
-export function savePreset(list: CustomPreset[], name: string, options: GuiOptions): { presets: CustomPreset[]; saved: CustomPreset } {
-  const trimmed = name.trim() || 'Untitled preset';
-  const now = new Date().toISOString();
-  const found = list.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
-  if (found) {
-    const updated = { ...found, name: trimmed, updatedAt: now, settings: settingsFromOptions(options) };
-    return { presets: list.map((p) => p.id === found.id ? updated : p), saved: updated };
-  }
-  const created = { id: `preset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: trimmed, createdAt: now, updatedAt: now, settings: settingsFromOptions(options) };
-  return { presets: [...list, created], saved: created };
-}
-
-export function renamePreset(list: CustomPreset[], id: string, name: string): CustomPreset[] {
-  const nextName = name.trim() || 'Untitled preset';
-  return list.map((p) => p.id === id ? { ...p, name: nextName, updatedAt: new Date().toISOString() } : p);
-}
-
+export function normalizePresetName(raw: string): { ok: true; value: string } | { ok: false; error: string } { const trimmed = raw.trim(); if (!trimmed) return { ok: false, error: 'Preset name cannot be empty.' }; if (!/[a-z0-9]/i.test(trimmed)) return { ok: false, error: 'Preset name cannot be empty.' }; if (trimmed.length > 60) return { ok: false, error: 'Preset name must be 60 characters or fewer.' }; return { ok: true, value: trimmed }; }
+export function normalizePresetSettings(input: Partial<CustomPresetSettings> | undefined): CustomPresetSettings { return { outputFormat: normalizeOutputFormat(input?.outputFormat), pattern: typeof input?.pattern === 'string' && input.pattern.trim() ? input.pattern : defaults.pattern, prefix: typeof input?.prefix === 'string' ? input.prefix : undefined, custom: typeof input?.custom === 'string' ? input.custom : undefined, quality: toInt(input?.quality, 85, 1, 100), alphaQuality: toInt(input?.alphaQuality, 100, 0, 100), effort: toInt(input?.effort, 4, 0, 6), maxWidth: toPosInt(input?.maxWidth), maxHeight: toPosInt(input?.maxHeight), lossless: Boolean(input?.lossless), keepMetadata: Boolean(input?.keepMetadata), recursive: Boolean(input?.recursive) }; }
+export function sanitizeCustomPresets(input: unknown): CustomPreset[] { if (!Array.isArray(input)) return []; return input.map((item, idx) => { const row = (item ?? {}) as Record<string, unknown>; const now = new Date().toISOString(); return { id: typeof row.id === 'string' && row.id ? row.id : `preset-${idx + 1}`, name: typeof row.name === 'string' && row.name.trim() ? row.name.trim() : 'Untitled preset', createdAt: typeof row.createdAt === 'string' && row.createdAt ? row.createdAt : now, updatedAt: typeof row.updatedAt === 'string' && row.updatedAt ? row.updatedAt : now, settings: normalizePresetSettings(row.settings as Partial<CustomPresetSettings>) }; }); }
+export function settingsFromOptions(options: GuiOptions): CustomPresetSettings { return normalizePresetSettings(options as Partial<CustomPresetSettings>); }
+export function presetSettingsEqual(a: CustomPresetSettings, b: CustomPresetSettings): boolean { return JSON.stringify(a) === JSON.stringify(b); }
+function isBuiltInPreset(value: WorkflowPresetId): value is Exclude<WorkflowPresetId, 'custom' | `custom:${string}`> { return !value.startsWith('custom') && value !== 'custom'; }
+export function getPresetMatchState(currentOptions: GuiOptions, selectedPreset: WorkflowPresetId, customPresets: CustomPreset[]): { label: string; modified: boolean } { if (selectedPreset === 'custom') return { label: 'Custom settings', modified: false }; const current = settingsFromOptions(currentOptions); if (selectedPreset.startsWith('custom:')) { const p = customPresets.find((x) => `custom:${x.id}` === selectedPreset); if (!p) return { label: 'Custom settings', modified: false }; const modified = !presetSettingsEqual(current, p.settings); return { label: modified ? `Modified from ${p.name}` : `Custom: ${p.name}`, modified }; } if (!isBuiltInPreset(selectedPreset)) return { label: 'Custom settings', modified: false }; const built = workflowPresets[selectedPreset]; const modified = !presetSettingsEqual(current, normalizePresetSettings(built)); return { label: modified ? `Modified from ${selectedPreset}` : selectedPreset, modified }; }
+export function savePreset(list: CustomPreset[], name: string, options: GuiOptions): { presets: CustomPreset[]; saved?: CustomPreset; status: string } { const check = normalizePresetName(name); if (!check.ok) return { presets: list, status: check.error }; const now = new Date().toISOString(); const found = list.find((p) => p.name.toLowerCase() === check.value.toLowerCase()); if (found) { const updated = { ...found, name: check.value, updatedAt: now, settings: settingsFromOptions(options) }; return { presets: list.map((p) => p.id === found.id ? updated : p), saved: updated, status: 'Preset updated.' }; } const created = { id: `preset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: check.value, createdAt: now, updatedAt: now, settings: settingsFromOptions(options) }; return { presets: [...list, created], saved: created, status: 'Preset saved.' }; }
+export function renamePreset(list: CustomPreset[], id: string, name: string): { presets: CustomPreset[]; status: string } { const check = normalizePresetName(name); if (!check.ok) return { presets: list, status: check.error }; return { presets: list.map((p) => p.id === id ? { ...p, name: check.value, updatedAt: new Date().toISOString() } : p), status: 'Preset renamed.' }; }
 export function deletePreset(list: CustomPreset[], id: string): CustomPreset[] { return list.filter((p) => p.id !== id); }
+export function serializePresetPack(customPresets: CustomPreset[]): PresetPack { return { type: 'foxpix-presets', version: 1, exportedAt: new Date().toISOString(), presets: customPresets.map((p) => ({ ...p, settings: normalizePresetSettings(p.settings) })) }; }
+export function parsePresetPack(rawJson: string): { ok: true; presets: CustomPreset[] } | { ok: false; error: string } { try { const parsed = JSON.parse(rawJson) as { type?: string; version?: number; presets?: unknown }; if (parsed.type !== 'foxpix-presets' || parsed.version !== 1) return { ok: false, error: 'This is not a valid FoxPix preset file.' }; return { ok: true, presets: sanitizeCustomPresets(parsed.presets) }; } catch { return { ok: false, error: 'This is not a valid FoxPix preset file.' }; } }
+export function mergeImportedPresets(existing: CustomPreset[], imported: CustomPreset[]): CustomPreset[] { const out = [...existing]; imported.forEach((p) => { let name = p.name; while (out.some((e) => e.name.toLowerCase() === name.toLowerCase())) name = `${p.name} (imported)`; out.push({ ...p, id: `preset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name }); }); return out; }

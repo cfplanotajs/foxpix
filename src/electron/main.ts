@@ -231,6 +231,26 @@ app.whenReady().then(() => {
   ipcMain.handle('foxpix:getThumbnails', async (_event: unknown, payload: { sourcePaths: string[] }) => {
     return createThumbnails(payload.sourcePaths);
   });
+  ipcMain.handle('foxpix:exportPresets', async (_event: unknown, payload: unknown) => {
+    const result = await dialog.showSaveDialog({ defaultPath: 'foxpix-presets.json', filters: [{ name: 'JSON', extensions: ['json'] }] });
+    if (result.canceled || !result.filePath) return { ok: false as const, error: 'Cancelled.' };
+    try {
+      await writeFile(result.filePath, JSON.stringify(payload, null, 2), 'utf8');
+      return { ok: true as const };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+  ipcMain.handle('foxpix:importPresets', async () => {
+    const result = await dialog.showOpenDialog({ properties: ['openFile'], filters: [{ name: 'JSON', extensions: ['json'] }] });
+    if (result.canceled || !result.filePaths[0]) return { ok: false as const, error: 'Cancelled.' };
+    try {
+      const raw = await readFile(result.filePaths[0], 'utf8');
+      return { ok: true as const, rawJson: raw };
+    } catch (error) {
+      return { ok: false as const, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
 });
 
 app.on('window-all-closed', () => {
