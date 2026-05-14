@@ -17,7 +17,7 @@ export default function SummaryPanel({ summary, estimateTotals, manifestPath, ma
   const copyOutputs = async (): Promise<void> => { if (!summary) return; await navigator.clipboard.writeText(summary.files.map((f) => f.outputFilename).join('\n')); onFeedback('Copied output filenames.'); };
   return (
     <section className="panel">
-      <h2>Summary</h2>{estimateTotals ? <><div className="metric-grid"><div className="metric"><span>Estimated rows</span><strong>{estimateTotals.estimatedCount}</strong></div><div className="metric"><span>Failed estimates</span><strong>{estimateTotals.failedCount}</strong></div><div className="metric"><span>Estimated output</span><strong>{formatBytes(estimateTotals.totalEstimatedOutputBytes)}</strong></div><div className="metric"><span>Estimated saved</span><strong>{formatBytes(estimateTotals.totalEstimatedSavedBytes)} ({estimateTotals.totalEstimatedSavedPercent}%)</strong></div></div><p className="hint">Estimates are previews. Actual results are calculated after processing.</p></> : null}{summary ? <h3>{summary.failed > 0 ? 'Finished with warnings. Review failed rows.' : 'Finished. Your optimized assets are ready.'}</h3> : null}
+      <h2>Summary</h2>{estimateTotals ? <><h3>Estimated results</h3><div className="metric-grid"><div className="metric"><span>Estimated rows</span><strong>{estimateTotals.estimatedCount}</strong></div><div className="metric"><span>Failed estimates</span><strong>{estimateTotals.failedCount}</strong></div><div className="metric"><span>Estimated output</span><strong>{formatBytes(estimateTotals.totalEstimatedOutputBytes)}</strong></div><div className="metric"><span>Estimated saved</span><strong>{formatBytes(estimateTotals.totalEstimatedSavedBytes)} ({estimateTotals.totalEstimatedSavedPercent}%)</strong></div></div><p className="hint">Estimates are previews. Actual results are calculated after processing.</p></> : null}{summary ? <h3>{summary.failed > 0 ? 'Completed with warnings. Review failed rows.' : 'Success. Processed assets are ready.'}</h3> : null}
       {summary ? <div className="metric-grid">
         <div className="metric"><span>Discovered</span><strong>{summary.discovered}</strong></div>
         <div className="metric"><span>Processed</span><strong>{summary.files.length}</strong></div>
@@ -29,12 +29,12 @@ export default function SummaryPanel({ summary, estimateTotals, manifestPath, ma
         <div className="metric"><span>Saved %</span><strong>{summary.savedPercent}%</strong></div>
       </div> : null}
       <p className="mono">Output folder: {outputFolder}</p>
-      <p className="mono">Manifest: {manifestPath}</p>
-      <p className="mono">CSV manifest: {manifestCsvPath}</p>
+      <p className="mono">Manifest JSON: {manifestPath}</p>
+      <p className="mono">Manifest CSV: {manifestCsvPath}</p>
       <div className="actions">
         <button type="button" onClick={() => void onOpenPath(outputFolder).then(() => onFeedback('Opened output folder.')).catch((e) => onFeedback(`Open folder failed: ${e instanceof Error ? e.message : String(e)}`))}>Open output folder</button>
-        <button type="button" onClick={() => { if (!manifestPath) return onFeedback('Manifest not available yet.'); void onOpenPath(manifestPath).then(() => onFeedback('Opened manifest.json.')).catch((e) => onFeedback(`Open manifest failed: ${e instanceof Error ? e.message : String(e)}`)); }}>Open manifest.json</button>
-        <button type="button" onClick={() => { if (!manifestCsvPath) return onFeedback('Manifest not available yet.'); void onOpenPath(manifestCsvPath).then(() => onFeedback('Opened manifest.csv.')).catch((e) => onFeedback(`Open manifest failed: ${e instanceof Error ? e.message : String(e)}`)); }}>Open manifest.csv</button>
+        <button type="button" onClick={() => { if (!manifestPath) return onFeedback('Manifest not available yet.'); void onOpenPath(manifestPath).then(() => onFeedback('Opened manifest.json.')).catch((e) => onFeedback(`Open manifest failed: ${e instanceof Error ? e.message : String(e)}`)); }}>Open Manifest JSON</button>
+        <button type="button" onClick={() => { if (!manifestCsvPath) return onFeedback('Manifest not available yet.'); void onOpenPath(manifestCsvPath).then(() => onFeedback('Opened manifest.csv.')).catch((e) => onFeedback(`Open manifest failed: ${e instanceof Error ? e.message : String(e)}`)); }}>Open Manifest CSV</button>
         <button type="button" onClick={() => void copySummary()} disabled={!summary}>Copy summary</button>
         <button type="button" onClick={() => void copyOutputs()} disabled={!summary}>Copy output filenames</button>
       </div>

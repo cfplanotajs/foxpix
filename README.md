@@ -217,16 +217,14 @@ npm run start:gui
 
 ### GUI workflow
 
-1. Select input folder.
-2. Optionally choose specific image files (instead of a folder).
-3. Set rename pattern/compression and output format.
-4. Click **Preview** to plan output names and target formats (writes no files).
-5. Click **Estimate Sizes** for in-memory size estimates (writes no files).
-6. Use **Generate Preview** in Preview Studio for side-by-side visual checks (writes no files).
-7. Use selective inclusion and per-row **Override** formats as needed.
-8. Click **Process Included** to write optimized files plus `manifest.json` and `manifest.csv`.
-9. Reopen recent source/output paths from the Recents panel.
-10. Use Smart Recommendations quick actions (and one-step Undo) to resolve common setup issues quickly.
+1. Add source.
+2. Pick preset and output format.
+3. Preview web-safe names.
+4. Review warnings and per-file overrides.
+5. Estimate Sizes.
+6. Inspect images in Preview Studio.
+7. Process Included.
+8. Open output folder and manifests.
 
 ### GUI shortcuts
 

@@ -4,6 +4,8 @@ import SettingsPanel from './components/SettingsPanel.js';
 import PreviewTable from './components/PreviewTable.js';
 import SummaryPanel from './components/SummaryPanel.js';
 import ProgressPanel from './components/ProgressPanel.js';
+import AppHeader from './components/AppHeader.js';
+import ActionBar from './components/ActionBar.js';
 import type { PreviewRow, GuiOptions, WorkflowPresetId, StoredGuiSettings } from './types.js';
 import { DEFAULT_OUTPUT_FORMAT, normalizeOutputFormat, type ProcessingSummary } from '../types/index.js';
 import { workflowPresets } from '../core/presets.js';
@@ -158,26 +160,20 @@ export default function App(): JSX.Element {
   };
 
   return (<main className="app">
-    <section className="topbar panel">
-      <div>
-        <h1>FoxPix</h1>
-        <p className="tagline">Batch rename, compress, and convert web assets.</p>
-      </div>
-      <div className="badges"><span className="pill">Local-only</span><span className="pill">Transparency-safe</span><span className="pill">WebP-ready</span></div>
-    </section>
+    <AppHeader />
     <section className="left">
       <section className="panel stepper"><h2>Workflow</h2><ol><li>Source</li><li>Rename</li><li>Preview</li><li>Process</li><li>Export</li></ol></section>
       <FolderPicker input={options.input || ''} output={outputDisplay} mode={mode} selectedFileCount={options.filePaths?.length ?? 0} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
       <div className="actions"><button title="Ctrl+Shift+O" type="button" className="secondary" onClick={() => void pickFiles()} disabled={busy || !bridgeAvailable}>Choose Image File(s) <span className="status-chip">Ctrl+Shift+O</span></button></div>
       <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop a folder or multiple image files</strong><p>Drag a folder for folder mode, or drag supported files for selected-files mode.</p></div>
       <SettingsPanel options={options} onChange={onOptionsChange} disabled={busy} selectedPreset={selectedPreset} presetLabel={presetMatch.label} customPresets={customPresets} onPresetChange={applyPreset} onCustomPresetSelect={applyCustomPreset} onSavePreset={(name) => { const result = savePreset(customPresets, name, options); setCustomPresets(result.presets); if (result.saved) setSelectedPreset(`custom:${result.saved.id}` as WorkflowPresetId); setStatus(result.status); }} onRenamePreset={(id, name) => { const result = renamePreset(customPresets, id, name); setCustomPresets(result.presets); setStatus(result.status); }} onDeletePreset={(id) => { setCustomPresets((prev) => deletePreset(prev, id)); if (selectedPreset === (`custom:${id}` as WorkflowPresetId)) setSelectedPreset('custom'); setStatus('Preset deleted.'); }} onExportPresets={async () => { if (customPresets.length === 0) return setStatus('No custom presets to export.'); const res = await window.foxpix.exportPresets(serializePresetPack(customPresets)); setStatus(res.ok ? `Exported ${customPresets.length} custom presets.` : `Export failed: ${res.error}`); }} onImportPresets={async () => { const res = await window.foxpix.importPresets(); if (!res.ok) return setStatus(`Import failed: ${res.error}`); const parsed = parsePresetPack(res.rawJson); if (!parsed.ok) return setStatus(parsed.error); if (parsed.presets.length === 0) return setStatus('No valid presets found.'); const merged = mergeImportedPresets(customPresets, parsed.presets); setCustomPresets(merged); setStatus(`Imported ${parsed.presets.length} presets.`); }} />
-      <div className="actions sticky-actions">
-        <button title="Ctrl+P" type="button" onClick={() => void handlePreview()} disabled={!availability.preview.enabled} className="secondary">Preview <span className="status-chip">Ctrl+P</span></button>
-        <button title="Ctrl+E" type="button" onClick={() => void handleEstimate()} disabled={!availability.estimate.enabled} className="secondary">Estimate Sizes <span className="status-chip">Ctrl+E</span></button>
-        <button title="Ctrl+Enter" type="button" onClick={() => void handleProcess()} disabled={!availability.process.enabled} className="primary">Process Included <span className="status-chip">Ctrl+Enter</span></button>
-        {!availability.preview.enabled || !availability.estimate.enabled || !availability.process.enabled ? <p className="hint warn">{availability.preview.reason ?? availability.estimate.reason ?? availability.process.reason}</p> : null}
-        <button type="button" onClick={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()} disabled={!bridgeAvailable || !outputDisplay} className="secondary">Open output folder</button>
-      </div>
+      <ActionBar
+        preview={{ label: 'Preview', hotkey: 'Ctrl+P', helper: 'Checks names and formats. Writes no files.', onClick: () => void handlePreview(), enabled: availability.preview.enabled, reason: availability.preview.reason }}
+        estimate={{ label: 'Estimate Sizes', hotkey: 'Ctrl+E', helper: 'In-memory only. Writes no files.', onClick: () => void handleEstimate(), enabled: availability.estimate.enabled, reason: availability.estimate.reason }}
+        process={{ label: 'Process Included', hotkey: 'Ctrl+Enter', helper: 'Writes optimized files and manifests.', onClick: () => void handleProcess(), enabled: availability.process.enabled, reason: availability.process.reason, primary: true }}
+        onOpenOutput={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()}
+        canOpenOutput={Boolean(bridgeAvailable && outputDisplay)}
+      />
       <section className="panel"><h3>Recents</h3><div className="recents-grid"><div className="recent-col"><h4>Recent source</h4><div className="actions">{recentInputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => setOptions((prev) => ({ ...prev, input: p, filePaths: [] }))}>{p}</button>)}</div></div><div className="recent-col"><h4>Recent output</h4><div className="actions">{recentOutputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }}>{p}</button>)}</div></div></div><button type="button" className="secondary" onClick={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); setStatus('Cleared recent paths.'); }}>Clear recents</button></section>
       <section className="panel"><button type="button" className="secondary" onClick={() => setShowHelp((v) => !v)}>{showHelp ? 'Hide Help' : 'Show Help'}</button>{showHelp ? <div><h3>Workflow</h3><p className="hint">Preview writes no files. Estimate Sizes writes no files. Generate Preview writes no files. Process Included writes optimized files plus Manifest JSON and Manifest CSV.</p><h3>Tokens</h3><p className="hint">{'{name}'} {'{prefix}'} {'{index}'} {'{folder}'} {'{custom}'}</p><h3>Formats</h3><p className="hint">WebP recommended. AVIF smaller/slower. JPEG photos only (no transparency). PNG lossless and transparency-safe.</p><h3>Safety</h3><p className="hint">Everything runs locally on your machine.</p></div> : null}</section>
     </section>
