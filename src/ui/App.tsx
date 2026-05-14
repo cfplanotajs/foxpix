@@ -15,6 +15,7 @@ import { applyBulkIncludedOverrides, getEffectiveOutputFormat, resetAllOverrides
 import { computeReviewCounts } from './reviewState.js';
 import { buildRecommendations, computeFormatMix } from './recommendations.js';
 import type { ReviewFilter } from './reviewState.js';
+import { initializeIncludedMap } from './selectionState.js';
 import { clearRecentPaths, pushRecentPath } from './recentPaths.js';
 import { sanitizeRecentPaths } from './recentPaths.js';
 import { getActionAvailability } from './actionAvailability.js';
@@ -120,7 +121,7 @@ export default function App(): JSX.Element {
   const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setRecentOutputs((prev) => pushRecentPath(prev, picked)); setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); setStatus('Output folder selected.'); } };
   const pickFiles = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectImageFiles(); if (!picked || picked.length === 0) return; setOptions((prev) => ({ ...prev, filePaths: picked, input: undefined, output: outputTouched ? prev.output : '' })); setStatus(`Selected files: ${picked.length}`); };
 
-  const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined, formatOverrides }); setPreviewRows(result.rows); setThumbnailMap({}); setIncludedMap(Object.fromEntries(result.rows.map((r) => [r.id, true]))); setEstimatesStale(true); setOutputFolderStatus(result.outputFolderStatus ?? null); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.total === 0 ? 'No supported files found in this source.' : `Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
+  const handlePreview = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); setBusy(true); setStatus('Preparing preview...'); try { const result = await window.foxpix.preview({ ...options, output: options.output || undefined, formatOverrides }); setPreviewRows(result.rows); setThumbnailMap({}); setIncludedMap(initializeIncludedMap(result.rows)); setEstimatesStale(true); setOutputFolderStatus(result.outputFolderStatus ?? null); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.total === 0 ? 'No supported files found in this source.' : `Preview ready (${result.total} files).`); } catch (error) { setStatus(`Preview failed: ${toMessage(error)}`); } finally { setBusy(false); } };
   const handleEstimate = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); const includedPaths = previewRows.filter((r) => includedMap[r.id] !== false).map((r) => r.sourcePath); if (includedPaths.length === 0) return void setStatus('Select at least one image to process.'); setBusy(true); setStatus('Estimating output sizes...'); try { const result = await window.foxpix.estimateSizes({ ...options, output: options.output || undefined, includedPaths, formatOverrides }); setPreviewRows((prev) => prev.map((row) => { const found = result.rows.find((r) => r.id === row.id); return found ?? { ...row, status: includedMap[row.id] === false ? 'skipped' : row.status, estimatedOutputSize: undefined, estimatedSavedPercent: undefined }; })); setEstimateTotals(result.totals); setEstimatesStale(false); setStatus(`Estimated ${result.totals.estimatedCount} files${result.totals.failedCount > 0 ? `, ${result.totals.failedCount} failed` : ''}.`); } catch (error) { setStatus(`Estimate failed: ${toMessage(error)}`); } finally { setBusy(false); } };
 
   const handleProcess = async (): Promise<void> => { if (bridgeError) return void setStatus(bridgeError); if (validationError) return void setStatus(validationError); const includedPaths = previewRows.filter((r) => includedMap[r.id] !== false).map((r) => r.sourcePath); if (includedPaths.length === 0) return void setStatus('Select at least one image to process.'); setBusy(true); setStatus('Processing batch...'); try { const result = await window.foxpix.process({ ...options, output: options.output || undefined, includedPaths, formatOverrides }); setSummary(result.summary); setManifestPath(result.manifestPath); setManifestCsvPath(result.manifestCsvPath); setOptions((prev) => ({ ...prev, output: result.outputFolder })); setStatus(result.summary.failed > 0 ? `Completed with warnings: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.` : `Completed: ${result.summary.succeeded} succeeded, ${result.summary.failed} failed.`); } catch (error) { setStatus(`Processing failed: ${toMessage(error)}`); } finally { setBusy(false); } };
@@ -146,6 +147,12 @@ export default function App(): JSX.Element {
       if (resolved.kind === 'folder') {
         const result = await window.foxpix.preview({ ...options, input: resolved.path, filePaths: [], output: outputTouched ? options.output || undefined : undefined });
         setPreviewRows(result.rows);
+        setIncludedMap(initializeIncludedMap(result.rows));
+        setThumbnailMap({});
+        setSelectedRowKey(null);
+        setStudioPreview(null);
+        setEstimateTotals(null);
+        setFormatOverrides({});
         setOptions((prev) => ({ ...prev, input: resolved.path, filePaths: [], output: result.outputFolder }));
         setStatus(result.total === 0 ? 'No supported files found in dropped folder.' : `Preview ready (${result.total} files).`);
         return;
@@ -153,6 +160,12 @@ export default function App(): JSX.Element {
 
       const result = await window.foxpix.preview({ ...options, input: undefined, filePaths: resolved.paths, output: outputTouched ? options.output || undefined : undefined });
       setPreviewRows(result.rows);
+      setIncludedMap(initializeIncludedMap(result.rows));
+      setThumbnailMap({});
+      setSelectedRowKey(null);
+      setStudioPreview(null);
+      setEstimateTotals(null);
+      setFormatOverrides({});
       setOptions((prev) => ({ ...prev, input: undefined, filePaths: resolved.paths, output: result.outputFolder }));
       setStatus(`Preview ready (${result.total} selected files).`);
     } catch (error) {

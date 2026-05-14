@@ -1,3 +1,4 @@
+import { stat } from 'node:fs/promises';
 import sharp from 'sharp';
 import type { CliOptions, OutputFormat } from '../types/index.js';
 import { normalizeOutputFormat } from '../types/index.js';
@@ -19,7 +20,7 @@ export async function generateImagePreview(sourcePath: string, options: CliOptio
     const displayMax = 1200;
     const originalObj = await sharp(sourcePath, { failOn: 'none' }).rotate().resize({ width: displayMax, height: displayMax, fit: 'inside', withoutEnlargement: true }).png().toBuffer({ resolveWithObject: true });
     const srcMeta = await sharp(sourcePath, { failOn: 'none' }).metadata();
-    const srcBytes = (await sharp(sourcePath, { failOn: 'none' }).toBuffer({ resolveWithObject: true })).info.size;
+    const srcBytes = await stat(sourcePath).then((m) => m.size).catch(() => 0);
     const fmt = normalizeOutputFormat(outputFormatOverride ?? options.outputFormat);
     if (fmt === 'jpeg' && hasAlpha(srcMeta)) {
       return { sourcePath, outputFilename, original: { dataUrl: toDataUrl(originalObj.data, 'image/png'), format: srcMeta.format, width: originalObj.info.width, height: originalObj.info.height, bytes: srcBytes, hasAlpha: hasAlpha(srcMeta) }, error: 'JPEG does not support transparency. Choose WebP, AVIF, or PNG for transparent assets.' };

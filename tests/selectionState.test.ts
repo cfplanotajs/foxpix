@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeSelectionCounts, hasIncludedRows } from '../src/ui/selectionState.js';
+import { computeSelectionCounts, hasIncludedRows, initializeIncludedMap } from '../src/ui/selectionState.js';
 
 const rows = [{ id: '1' }, { id: '2' }, { id: '3' }];
 
@@ -14,3 +14,7 @@ describe('selection state helpers', () => {
     expect(hasIncludedRows(rows, {})).toBe(true);
   });
 });
+
+  it('initializes included map with all true', () => {
+    expect(initializeIncludedMap(rows)).toEqual({ '1': true, '2': true, '3': true });
+  });
