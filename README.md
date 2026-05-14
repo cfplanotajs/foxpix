@@ -359,13 +359,21 @@ npm install
 - This should create/update `package-lock.json`.
 - Commit lockfile updates for reproducible installs.
 
-### 2) Validate code and behavior
+### 2) Validate dependencies, QA fixtures, and builds
 
 ```bash
+npm audit
+npm run create-samples
 npm run typecheck
 npm run test
 npm run build
 npm run build:gui
+```
+
+Optional local smoke launch:
+
+```bash
+npm run start:gui
 ```
 
 ### 3) Package desktop artifacts
@@ -392,17 +400,21 @@ npm run package:win
 ### 6) Teammate manual QA checklist
 
 - [ ] Launch app.
-- [ ] Choose folder.
-- [ ] Choose image file(s).
+- [ ] Choose folder source.
+- [ ] Choose selected-files source.
 - [ ] Drag folder.
-- [ ] Drag multiple image files.
+- [ ] Drag multiple files.
 - [ ] Preview.
-- [ ] Process.
-- [ ] Verify transparent WebP stays transparent.
-- [ ] Verify EXIF-rotated photo stays upright.
-- [ ] Verify web-safe names.
+- [ ] Estimate Sizes.
+- [ ] Open Preview Studio and Generate Preview.
+- [ ] Apply per-file Override format.
+- [ ] Skip one or more rows.
+- [ ] Process Included.
+- [ ] Verify transparent PNG is blocked for JPEG output.
+- [ ] Verify Renamed/conflict filter catches collision cases.
 - [ ] Verify `manifest.json` and `manifest.csv` exist.
-- [ ] Open output folder.
+- [ ] Open output folder from Summary.
+- [ ] Import/export custom presets.
 - [ ] Restart app and confirm settings persist.
 
 ### 7) Packaging troubleshooting

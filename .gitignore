@@ -3,3 +3,5 @@ dist/
 dist-ui/
 dist-electron/
 dist-release/
+
+sample-input/
