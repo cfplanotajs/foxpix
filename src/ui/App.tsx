@@ -117,7 +117,20 @@ export default function App(): JSX.Element {
     }
     setOptions(next); const base = isBuiltInPreset(selectedPreset) ? workflowPresets[selectedPreset] : null; if (base && (next.pattern !== (base.pattern ?? next.pattern) || next.quality !== (base.quality ?? next.quality) || next.alphaQuality !== (base.alphaQuality ?? next.alphaQuality) || next.lossless !== (base.lossless ?? next.lossless) || next.effort !== (base.effort ?? next.effort) || next.keepMetadata !== (base.keepMetadata ?? next.keepMetadata))) setSelectedPreset('custom'); };
 
-  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setRecentInputs((prev) => pushRecentPath(prev, picked)); setOptions((prev) => outputTouched ? { ...prev, input: picked, filePaths: [] } : { ...prev, input: picked, filePaths: [], output: '' }); setStatus('Folder selected. Click Preview to check output names.'); };
+
+  const applyFolderSource = (path: string): void => {
+    setPreviewRows([]);
+    setIncludedMap({});
+    setThumbnailMap({});
+    setSelectedRowKey(null);
+    setStudioPreview(null);
+    setEstimateTotals(null);
+    setFormatOverrides({});
+    setOptions((prev) => outputTouched ? { ...prev, input: path, filePaths: [] } : { ...prev, input: path, filePaths: [], output: '' });
+    setStatus('Recent source selected. Click Preview.');
+  };
+
+  const pickInput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectInputFolder(); if (!picked) return; setRecentInputs((prev) => pushRecentPath(prev, picked)); applyFolderSource(picked); setStatus('Folder selected. Click Preview to check output names.'); };
   const pickOutput = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectOutputFolder(); if (picked) { setRecentOutputs((prev) => pushRecentPath(prev, picked)); setOptions((prev) => ({ ...prev, output: picked })); setOutputTouched(true); setStatus('Output folder selected.'); } };
   const pickFiles = async (): Promise<void> => { if (!bridgeAvailable) return; const picked = await window.foxpix.selectImageFiles(); if (!picked || picked.length === 0) return; setOptions((prev) => ({ ...prev, filePaths: picked, input: undefined, output: outputTouched ? prev.output : '' })); setStatus(`Selected files: ${picked.length}`); };
 
@@ -179,7 +192,7 @@ export default function App(): JSX.Element {
     <AppHeader />
     <section className="left column-scroll control-sidebar">
       <section className="panel stepper"><h2>Workflow</h2><ol><li>Source</li><li>Rename</li><li>Preview</li><li>Process</li><li>Export</li></ol></section>
-      <SourcePanel mode={mode} input={options.input || ''} selectedFileCount={options.filePaths?.length ?? 0} dragOver={dragOver} setDragOver={setDragOver} onDrop={(e) => void onDrop(e)} onPickInput={() => void pickInput()} onPickFiles={() => void pickFiles()} recentInputs={recentInputs} recentOutputs={recentOutputs} onPickRecentInput={(p) => setOptions((prev) => ({ ...prev, input: p, filePaths: [] }))} onPickRecentOutput={(p) => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }} onClearRecents={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); setStatus('Cleared recent paths.'); }} disabled={busy || !bridgeAvailable} />
+      <SourcePanel mode={mode} input={options.input || ''} selectedFileCount={options.filePaths?.length ?? 0} dragOver={dragOver} setDragOver={setDragOver} onDrop={(e) => void onDrop(e)} onPickInput={() => void pickInput()} onPickFiles={() => void pickFiles()} recentInputs={recentInputs} recentOutputs={recentOutputs} onPickRecentInput={(p) => applyFolderSource(p)} onPickRecentOutput={(p) => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }} onClearRecents={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); setStatus('Cleared recent paths.'); }} disabled={busy || !bridgeAvailable} />
       <FolderPicker input={options.input || ''} output={outputDisplay} mode={mode} selectedFileCount={options.filePaths?.length ?? 0} onInputPick={pickInput} onOutputPick={pickOutput} disabled={busy || !bridgeAvailable} />
       <div className="actions"><button title="Ctrl+Shift+O" type="button" className="secondary" onClick={() => void pickFiles()} disabled={busy || !bridgeAvailable}>Choose Image File(s) <span className="status-chip">Ctrl+Shift+O</span></button></div>
       <div className={`panel dropzone ${dragOver ? 'drag-over' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={(e) => void onDrop(e)}><strong>Drop a folder or multiple image files</strong><p>Drag a folder for folder mode, or drag supported files for selected-files mode.</p></div>
@@ -191,7 +204,7 @@ export default function App(): JSX.Element {
         onOpenOutput={() => void (async () => { if (!bridgeAvailable) return void setStatus(bridgeMsg); const result = await window.foxpix.openFolder(outputDisplay); if (!result.ok) setStatus(`Open output folder failed. ${result.error}`); })()}
         canOpenOutput={Boolean(bridgeAvailable && outputDisplay)}
       />
-      <section className="panel"><h3>Recents</h3><div className="recents-grid"><div className="recent-col"><h4>Recent source</h4><div className="actions">{recentInputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => setOptions((prev) => ({ ...prev, input: p, filePaths: [] }))}>{p}</button>)}</div></div><div className="recent-col"><h4>Recent output</h4><div className="actions">{recentOutputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }}>{p}</button>)}</div></div></div><button type="button" className="secondary" onClick={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); setStatus('Cleared recent paths.'); }}>Clear recents</button></section>
+      <section className="panel"><h3>Recents</h3><div className="recents-grid"><div className="recent-col"><h4>Recent source</h4><div className="actions">{recentInputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => applyFolderSource(p)}>{p}</button>)}</div></div><div className="recent-col"><h4>Recent output</h4><div className="actions">{recentOutputs.map((p) => <button key={p} title={p} type="button" className="secondary path-btn" onClick={() => { setOutputTouched(true); setOptions((prev) => ({ ...prev, output: p })); }}>{p}</button>)}</div></div></div><button type="button" className="secondary" onClick={() => { setRecentInputs(clearRecentPaths()); setRecentOutputs(clearRecentPaths()); setStatus('Cleared recent paths.'); }}>Clear recents</button></section>
       <section className="panel"><button type="button" className="secondary" onClick={() => setShowHelp((v) => !v)}>{showHelp ? 'Hide Help' : 'Show Help'}</button>{showHelp ? <div><h3>Workflow</h3><p className="hint">Preview writes no files. Estimate Sizes writes no files. Generate Preview writes no files. Process Included writes optimized files plus Manifest JSON and Manifest CSV.</p><h3>Tokens</h3><p className="hint">{'{name}'} {'{prefix}'} {'{index}'} {'{folder}'} {'{custom}'}</p><h3>Formats</h3><p className="hint">WebP recommended. AVIF smaller/slower. JPEG photos only (no transparency). PNG lossless and transparency-safe.</p><h3>Safety</h3><p className="hint">Everything runs locally on your machine.</p></div> : null}</section>
     </section>
     <section className="right inspector-stack column-scroll">
