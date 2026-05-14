@@ -11,7 +11,7 @@ export interface ImagePreviewResult {
   error?: string;
 }
 
-function hasAlpha(meta: sharp.Metadata): boolean { return Boolean(meta.hasAlpha || (typeof meta.channels === 'number' && meta.channels >= 4)); }
+function hasAlpha(meta: sharp.Metadata): boolean { return meta.hasAlpha === true; }
 function toDataUrl(buffer: Buffer, mime: string): string { return `data:${mime};base64,${buffer.toString('base64')}`; }
 
 export async function generateImagePreview(sourcePath: string, options: CliOptions, outputFilename?: string, outputFormatOverride?: OutputFormat): Promise<ImagePreviewResult> {

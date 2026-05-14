@@ -21,7 +21,7 @@ export interface EstimateRow {
 }
 
 function hasAlpha(meta: sharp.Metadata): boolean {
-  return Boolean(meta.hasAlpha || (typeof meta.channels === 'number' && meta.channels >= 4));
+  return meta.hasAlpha === true;
 }
 
 export async function estimateImages(plan: RenamePlanItem[], options: CliOptions): Promise<{ rows: EstimateRow[]; totals: { totalOriginalBytes: number; totalEstimatedOutputBytes: number; totalEstimatedSavedBytes: number; totalEstimatedSavedPercent: number; estimatedCount: number; failedCount: number } }> {

@@ -98,3 +98,21 @@ tr:hover { background:#182844; }
   .metric-grid,.action-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .preview-studio-grid,.recents-grid,.grid { grid-template-columns:1fr; }
 }
+
+/* Source panel */
+.source-panel { display:grid; gap:10px; }
+.path-truncate { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; justify-content:flex-start; }
+.shortcut-chip { margin-left:6px; font-size:.72rem; border:1px solid var(--border); border-radius:6px; padding:1px 6px; }
+
+/* Status banner */
+.status-banner { display:grid; gap:6px; border-radius:10px; border:1px solid var(--border); padding:10px; }
+.status-banner p { margin:0; }
+.status-info { border-left:4px solid var(--info); }
+.status-success { border-left:4px solid var(--success); }
+.status-warning { border-left:4px solid var(--warning); }
+.status-error { border-left:4px solid var(--danger); }
+.status-busy { border-left:4px solid var(--primary); }
+
+.section-heading { margin-bottom:8px; }
+.inspector-stack { align-content:start; }
+.metric-card { border:1px solid var(--border); border-radius:10px; }

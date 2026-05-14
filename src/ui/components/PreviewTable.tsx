@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { PreviewRow } from '../types.js';
 import type { OutputFormat } from '../../types/index.js';
+import EmptyState from './EmptyState.js';
 import { classifyEstimateRow, filterPreviewRows, getRowWarningState, type ReviewFilter } from '../reviewState.js';
 
 function formatBytes(bytes: number): string {
@@ -30,9 +31,9 @@ export default function PreviewTable({ rows, includedMap, thumbnailMap, onToggle
         <div className="toolbar-group"><p className="toolbar-title">Search + filters</p><div className="actions"><button type="button" className="secondary" onClick={() => { onFilterChange?.('all'); setInternalFilter('all'); }}>All</button><button type="button" className="secondary" onClick={() => { onFilterChange?.('included'); setInternalFilter('included'); }}>Included</button><button type="button" className="secondary" onClick={() => { onFilterChange?.('skipped'); setInternalFilter('skipped'); }}>Skipped</button><button type="button" className="secondary" onClick={() => { onFilterChange?.('overrides'); setInternalFilter('overrides'); }}>Override</button><button type="button" className="secondary" onClick={() => { onFilterChange?.('renamed'); setInternalFilter('renamed'); }}>Renamed</button><button type="button" className="secondary" onClick={() => { onFilterChange?.('warnings'); setInternalFilter('warnings'); }}>Warnings</button><button type="button" className="secondary" onClick={() => { onFilterChange?.('errors'); setInternalFilter('errors'); }}>Errors</button></div><label>Search<input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by original or output filename" /></label></div>
       </div>
       {rows.length === 0 ? (
-        <div className="empty-state"><p><strong>No files previewed yet.</strong></p><p>Drop a folder or choose image files, then click Preview.</p></div>
+        <EmptyState title='No preview rows yet' description='Add source files, then run Preview to generate web-safe names and target formats.' />
       ) : filtered.length === 0 ? (
-        <div className="empty-state"><p><strong>No matching files.</strong></p><p>Try a different search term.</p></div>
+        <EmptyState title='No matching rows' description='Try a different search or filter combination.' />
       ) : (
         <div className="table-wrap"><table>
           <thead><tr><th>Include</th><th>Thumb</th><th>Original</th><th>Output</th><th>Current format</th><th>Target format</th><th>Current size</th><th>Expected size</th><th>Savings</th><th>Status</th></tr></thead>

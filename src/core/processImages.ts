@@ -5,7 +5,7 @@ import { normalizeOutputFormat, type CliOptions, type ProcessingSummary, type Re
 
 
 function hasAlpha(meta: sharp.Metadata): boolean {
-  return Boolean(meta.hasAlpha || (typeof meta.channels === 'number' && meta.channels >= 4));
+  return meta.hasAlpha === true;
 }
 
 export async function processImages(plan: RenamePlanItem[], options: CliOptions): Promise<ProcessingSummary> {
