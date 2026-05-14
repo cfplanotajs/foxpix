@@ -1,3 +1,4 @@
+import { constants } from 'node:fs';
 import { access, stat } from 'node:fs/promises';
 
 export type OutputFolderStatus =
@@ -11,7 +12,7 @@ export async function getOutputFolderStatus(outputPath: string): Promise<OutputF
     const s = await stat(outputPath);
     if (!s.isDirectory()) return { status: 'not-directory', path: outputPath, error: 'Output path is not a folder.' };
     try {
-      await access(outputPath);
+      await access(outputPath, constants.W_OK);
       return { status: 'exists', path: outputPath };
     } catch {
       return { status: 'not-accessible', path: outputPath, error: 'Output folder cannot be accessed.' };

@@ -138,10 +138,28 @@ describe('CLI exit codes', () => {
     logSpy.mockRestore();
   });
 
+  it('accepts uppercase supported formats in dry-run', async () => {
+    const root = await mkdtemp(path.join(os.tmpdir(), 'foxpix-cli-format-upper-'));
+    const input = path.join(root, 'input');
+    await mkdir(input, { recursive: true });
+    await createValidPng(path.join(input, 'good.png'));
+    const logs: string[] = [];
+    const logSpy = vi.spyOn(console, 'log').mockImplementation((...args) => { logs.push(args.join(' ')); });
+    expect(await runCli(['--input', input, '--format', 'WEBP', '--dryRun'])).toBe(0);
+    expect(await runCli(['--input', input, '--format', 'AVIF', '--dryRun'])).toBe(0);
+    expect(await runCli(['--input', input, '--format', 'JPEG', '--dryRun'])).toBe(0);
+    expect(await runCli(['--input', input, '--format', 'PNG', '--dryRun'])).toBe(0);
+    expect(logs.some((l) => l.includes('.avif'))).toBe(true);
+    expect(logs.some((l) => l.includes('.jpg'))).toBe(true);
+    expect(logs.some((l) => l.includes('.png'))).toBe(true);
+    logSpy.mockRestore();
+  });
+
   it('rejects invalid --format values', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const code = await runCli(['--input', '/tmp', '--format', 'bad']);
     expect(code).toBe(1);
+    expect(await runCli(['--input', '/tmp', '--format', 'gif'])).toBe(1);
     errSpy.mockRestore();
   });
 

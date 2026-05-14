@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mkdtemp, writeFile, mkdir } from 'node:fs/promises';
+import { mkdtemp, writeFile, chmod } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { getOutputFolderStatus } from '../src/core/outputFolderStatus.js';
@@ -21,5 +21,13 @@ describe('outputFolderStatus', () => {
     await writeFile(fp, 'x', 'utf8');
     const status = await getOutputFolderStatus(fp);
     expect(status.status).toBe('not-directory');
+  });
+  it('returns not-accessible for non-writable directory when supported', async () => {
+    if (process.platform === 'win32') return;
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'foxpix-status-'));
+    await chmod(dir, 0o555);
+    const status = await getOutputFolderStatus(dir);
+    expect(['exists', 'not-accessible']).toContain(status.status);
+    await chmod(dir, 0o755);
   });
 });

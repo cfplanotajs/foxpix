@@ -84,6 +84,14 @@ function parsePositiveIntegerOption(value: string, optionName: string): number {
   return num;
 }
 
+function parseOutputFormatOption(value: string): CliOptions['outputFormat'] {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'webp' || normalized === 'avif' || normalized === 'jpeg' || normalized === 'png') {
+    return normalized;
+  }
+  throw new InvalidArgumentError('Unsupported format. Use webp, avif, jpeg, or png.');
+}
+
 export async function runCli(argv: string[]): Promise<number> {
   try {
     const version = await getCliVersion();
@@ -106,7 +114,7 @@ export async function runCli(argv: string[]): Promise<number> {
       .option('--recursive', 'Recursively discover files', false)
       .option('--dryRun', 'Print planned mappings only', false)
       .option('--keepMetadata', 'Preserve metadata in output files', false)
-      .option('--format <format>', 'Output format: webp, avif, jpeg, png (default: webp)', 'webp')
+      .option('--format <format>', 'Output format: webp, avif, jpeg, png (default: webp)', parseOutputFormatOption, 'webp')
       .allowExcessArguments(false)
       .exitOverride();
 
@@ -122,9 +130,6 @@ export async function runCli(argv: string[]): Promise<number> {
     }
 
     const normalizedFormat = normalizeOutputFormat(raw.format);
-    if (String(raw.format).toLowerCase() !== normalizedFormat && String(raw.format).toLowerCase() !== 'webp') {
-      throw new Error('Unsupported format. Use webp, avif, jpeg, or png.');
-    }
 
     const options: CliOptions = {
       input: inputFolder,
