@@ -226,6 +226,7 @@ npm run start:gui
 7. Use selective inclusion and per-row **Override** formats as needed.
 8. Click **Process Included** to write optimized files plus `manifest.json` and `manifest.csv`.
 9. Reopen recent source/output paths from the Recents panel.
+10. Use Smart Recommendations quick actions (and one-step Undo) to resolve common setup issues quickly.
 
 ### GUI shortcuts
 
