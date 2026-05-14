@@ -65,3 +65,34 @@ thead th{position:sticky;top:0;background:#10203a}.include-cell{text-align:cente
 
 /* Responsive */
 @media (max-width:1200px){.app{grid-template-columns:1fr}.preview-studio-grid,.grid,.recents-grid,.metric-grid,.action-grid{grid-template-columns:1fr}}
+
+
+/* layout repair */
+.app,.left,.right,.panel,.source-panel,.settings-panel,.action-panel{min-width:0}
+.left{overflow-x:hidden}
+.right{overflow-x:hidden}
+.column-scroll{overflow-x:hidden}
+
+.action-grid{grid-template-columns:1fr}
+.action-btn{width:100%;min-width:0}
+.action-row{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.subtle-btn{opacity:.85}
+
+.settings-panel label{display:grid;gap:6px;min-width:0}
+.settings-panel small,.settings-panel .hint{overflow-wrap:anywhere}
+.settings-panel input,.settings-panel select{width:100%;max-width:100%}
+.settings-panel .checks{display:flex;flex-wrap:wrap;gap:10px}
+
+.preview-toolbar .toolbar-row{display:grid;gap:8px}
+.preview-table-wrap,.table-wrap{overflow:auto;max-width:100%}
+.table-wrap table{min-width:980px}
+th:nth-child(1),td:nth-child(1){width:64px}
+th:nth-child(2),td:nth-child(2){width:84px}
+th:nth-child(5),th:nth-child(6),td:nth-child(5),td:nth-child(6){width:130px}
+th:nth-child(7),th:nth-child(8),th:nth-child(9){width:110px}
+
+.path-btn,.path-truncate{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (max-width:1360px){
+  .app{grid-template-columns:minmax(380px,430px) minmax(0,1fr)}
+}

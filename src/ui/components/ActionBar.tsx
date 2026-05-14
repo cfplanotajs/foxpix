@@ -4,21 +4,20 @@ export default function ActionBar({ preview, estimate, process, onOpenOutput, ca
   const disabledReason = !preview.enabled ? preview.reason : !estimate.enabled ? estimate.reason : !process.enabled ? process.reason : null;
   const renderAction = (action: ActionConfig): JSX.Element => (
     <button title={action.hotkey} type="button" onClick={action.onClick} disabled={!action.enabled} className={action.primary ? 'primary action-btn' : 'secondary action-btn'}>
-      <span className="action-title">{action.label}</span>
-      <span className="status-chip">{action.hotkey}</span>
+      <div className="action-row"><span className="action-title">{action.label}</span><span className="shortcut-chip">{action.hotkey}</span></div>
       <span className="action-helper">{action.helper}</span>
     </button>
   );
 
   return (
-    <section className="panel sticky-actions">
+    <section className="panel sticky-actions action-panel">
       <div className="action-grid">
         {renderAction(preview)}
         {renderAction(estimate)}
         {renderAction(process)}
       </div>
-      {disabledReason ? <p className="hint warn">Why disabled: {disabledReason}</p> : null}
-      <div className="actions"><button type="button" onClick={onOpenOutput} disabled={!canOpenOutput} className="secondary">Open output folder</button></div>
+      {disabledReason ? <p className="hint warn">Disabled: {disabledReason}</p> : null}
+      <div className="actions"><button type="button" onClick={onOpenOutput} disabled={!canOpenOutput} className="secondary subtle-btn">Open output folder</button></div>
     </section>
   );
 }

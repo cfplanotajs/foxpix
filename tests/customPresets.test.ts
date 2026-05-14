@@ -37,6 +37,24 @@ describe('custom presets', () => {
     const unknown = getPresetDisplayName('custom:missing', []);
     expect(unknown).toBe('Custom settings');
   });
+
+  it('merges imported duplicates with deterministic suffix increments', () => {
+    const existing = savePreset([], 'Amazon PDP', options).presets;
+    const imported = [{ ...existing[0], id: 'x' } as any];
+    const once = mergeImportedPresets(existing as any, imported as any);
+    expect(once.some((p) => p.name === 'Amazon PDP (imported)')).toBe(true);
+    const twice = mergeImportedPresets(once as any, imported as any);
+    expect(twice.some((p) => p.name === 'Amazon PDP (imported 2)')).toBe(true);
+  });
+
+  it('handles case-insensitive imported name collisions and multiple duplicates', () => {
+    const existing = [{ id: '1', name: 'amazon pdp', createdAt: '', updatedAt: '', settings: savePreset([], 'X', options).presets[0].settings } as any, { id: '2', name: 'Amazon PDP (imported)', createdAt: '', updatedAt: '', settings: savePreset([], 'Y', options).presets[0].settings } as any];
+    const imported = [{ ...existing[0], id: '3', name: 'Amazon PDP' } as any, { ...existing[0], id: '4', name: 'Amazon PDP' } as any];
+    const merged = mergeImportedPresets(existing as any, imported as any);
+    expect(merged.some((p) => p.name === 'Amazon PDP (imported 2)')).toBe(true);
+    expect(merged.some((p) => p.name === 'Amazon PDP (imported 3)')).toBe(true);
+  });
+
   it('export/import helpers work and merge duplicates safely', () => {
     const saved = savePreset([], 'Amazon', options).presets;
     const pack = serializePresetPack(saved);

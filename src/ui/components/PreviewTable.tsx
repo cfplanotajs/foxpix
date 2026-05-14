@@ -35,7 +35,7 @@ export default function PreviewTable({ rows, includedMap, thumbnailMap, onToggle
       ) : filtered.length === 0 ? (
         <EmptyState title='No matching rows' description='Try a different search or filter combination.' />
       ) : (
-        <div className="table-wrap"><table>
+        <div className="table-wrap preview-table-scroll"><table>
           <thead><tr><th>Include</th><th>Thumb</th><th>Original</th><th>Output</th><th>Current format</th><th>Target format</th><th>Current size</th><th>Expected size</th><th>Savings</th><th>Status</th></tr></thead>
           <tbody>
             {filtered.map((row) => (
