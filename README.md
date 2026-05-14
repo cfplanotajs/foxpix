@@ -53,13 +53,40 @@ Options:
 - `--dryRun` (default: `false`)
 - `--keepMetadata` (default: `false`)
 
-## Create sample images
+## Local QA sample set
 
 ```bash
 npm run create-samples
 ```
 
-This generates local fixtures under `sample-input/` for quick validation.
+Creates an idempotent local fixture set under `sample-input/` including:
+- transparent PNG (alpha)
+- opaque JPEG and PNG
+- WebP input
+- duplicate/slug-collision names
+- punctuation/weird filename cases
+- large image for resize tests
+- nested folder images
+- `sample-input/optimized/` with intentional output conflicts (`cute-cat.webp`, `weird-name.webp`).
+
+### GUI smoke flow
+1. Launch app.
+2. Choose `sample-input`.
+3. Preview.
+4. Use **Renamed** filter.
+5. Estimate Sizes.
+6. Try global JPEG and observe transparent PNG warning/failure.
+7. Try per-file Override format.
+8. Process Included.
+9. Confirm `manifest.json` and `manifest.csv`.
+
+### CLI smoke commands
+```bash
+npm run optimize -- --input ./sample-input --prefix test --dryRun
+npm run optimize -- --input ./sample-input --prefix test --format WEBP --dryRun
+npm run optimize -- --input ./sample-input --prefix test --format PNG --dryRun
+npm run optimize -- --input ./sample-input --prefix test --format JPEG --dryRun
+```
 
 ## Examples
 
