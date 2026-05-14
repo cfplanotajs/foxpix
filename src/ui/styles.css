@@ -1,0 +1,67 @@
+/* Base / variables */
+:root{--background:#0b1120;--surface:#121c31;--surface-muted:#1b2842;--border:#2f4065;--text:#e9f0ff;--text-muted:#9fb1d7;--primary:#60a5fa;--success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--info:#38bdf8;--radius:12px;--shadow:0 10px 26px rgba(0,0,0,.28);--spacing:12px}
+*{box-sizing:border-box}body{margin:0;background:var(--background);color:var(--text);font-family:Inter,system-ui,sans-serif}h1,h2,h3,h4{margin:0 0 8px}
+input,select,button{font:inherit}button,input,select{border-radius:8px}button:focus,input:focus,select:focus{outline:2px solid var(--primary);outline-offset:2px}
+
+/* App shell */
+.app{display:grid;grid-template-columns:minmax(420px,460px) minmax(600px,1fr);gap:var(--spacing);padding:var(--spacing);height:100vh}
+.workbench{align-items:start}.column-scroll{max-height:calc(100vh - 24px);overflow:auto;padding-right:4px}
+
+/* Header */
+.app-header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(120deg,#11213d,#182946)}
+
+/* Layout columns */
+.left,.right{display:grid;gap:var(--spacing);align-content:start}.inspector-stack{grid-auto-rows:min-content}
+
+/* Panels/cards */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+.section-heading{display:flex;justify-content:space-between;align-items:center}.hint{color:var(--text-muted)}.subtle{opacity:.85}
+
+/* Source panel */
+.source-panel{display:grid;gap:10px}.dropzone{border:1px dashed var(--border);padding:12px;border-radius:10px;background:rgba(255,255,255,.015)}.dropzone.drag-over{border-color:var(--primary);background:rgba(96,165,250,.12)}
+.path-truncate{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recents-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.recents-grid button{width:100%;text-align:left}
+
+/* Settings */
+.settings-panel .settings-section{border:1px solid var(--border);border-radius:10px;padding:10px;margin:10px 0}.settings-panel .advanced{background:rgba(255,255,255,.02)}
+.token-chips button,.pattern-presets button{border-radius:999px}.example-box{border:1px solid var(--border);background:var(--surface-muted);padding:8px;border-radius:10px}
+.preset-panel{background:rgba(255,255,255,.015)}
+
+/* Action bar */
+.action-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.action-btn{display:grid;gap:4px;text-align:left}.action-btn.primary{box-shadow:0 0 0 1px rgba(255,255,255,.2) inset}
+.shortcut-chip,.status-chip{font-size:.72rem;border:1px solid var(--border);padding:1px 6px;border-radius:6px;color:var(--text-muted)}
+
+/* Status banner */
+.status-banner{padding:10px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02)}
+.status-info{border-left:4px solid var(--info)}.status-success{border-left:4px solid var(--success)}.status-warning{border-left:4px solid var(--warning)}.status-error{border-left:4px solid var(--danger)}.status-busy{border-left:4px solid var(--primary)}
+
+/* Empty states */
+.empty-state{border:1px dashed var(--border);padding:12px;border-radius:10px;background:rgba(255,255,255,.02)}
+
+/* Review toolbar */
+.preview-toolbar{display:grid;gap:8px}.toolbar-row{display:grid;gap:8px}.toolbar-group{border:1px solid var(--border);padding:8px;border-radius:10px;background:rgba(255,255,255,.015)}
+.toolbar-title{text-transform:uppercase;font-size:.76rem;letter-spacing:.06em;color:var(--text-muted);margin:0 0 6px}
+
+/* Preview table */
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px}table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+thead th{position:sticky;top:0;background:#10203a}.include-cell{text-align:center}.format-select{min-width:150px}
+.thumb-box{width:56px;height:56px;display:grid;place-items:center;border:1px solid var(--border);border-radius:8px;background-image:linear-gradient(45deg,#1d273f 25%,transparent 25%),linear-gradient(-45deg,#1d273f 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1d273f 75%),linear-gradient(-45deg,transparent 75%,#1d273f 75%);background-size:12px 12px}
+.file-emphasis{font-weight:700;color:#daebff}.format-pill{min-width:54px;justify-content:center}.selected-row{outline:2px solid var(--primary);background:rgba(96,165,250,.15)}.row-skipped{opacity:.65}.row-warn td:first-child::before{content:'! ';font-weight:700}.row-error td:first-child::before{content:'⚠ ';font-weight:700}
+
+/* Preview Studio */
+.preview-studio-panel .actions button{min-width:140px}.preview-studio-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.image-card{border:1px solid var(--border);border-radius:10px;padding:10px;background:rgba(255,255,255,.01)}
+.image-stage{min-height:220px;display:grid;place-items:center;border:1px dashed var(--border);border-radius:8px;background-image:linear-gradient(45deg,#1d273f 25%,transparent 25%),linear-gradient(-45deg,#1d273f 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1d273f 75%),linear-gradient(-45deg,transparent 75%,#1d273f 75%);background-size:16px 16px}
+
+/* Summary */
+.summary-block{border:1px solid var(--border);border-radius:10px;padding:10px;margin:8px 0}.summary-headline{margin-top:10px}.metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.metric{border:1px solid var(--border);border-radius:10px;padding:8px;background:var(--surface-muted)}
+.action-group{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Badges */
+.pill{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:999px;padding:2px 8px;background:var(--surface-muted);font-size:.75rem}
+.warn{color:#ffd591}
+
+/* Utilities */
+.actions{display:flex;flex-wrap:wrap;gap:8px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mono{font-family:ui-monospace,monospace;word-break:break-all}
+
+/* Responsive */
+@media (max-width:1200px){.app{grid-template-columns:1fr}.preview-studio-grid,.grid,.recents-grid,.metric-grid,.action-grid{grid-template-columns:1fr}}
