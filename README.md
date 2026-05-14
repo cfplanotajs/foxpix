@@ -258,6 +258,7 @@ npm run start:gui
 
 - Smart Recommendations are deterministic and local-only.
 - Some recommendations include quick actions (for example Estimate Sizes, Show Renamed filter, safer pattern updates).
+- Mutating recommendation actions support one-step undo.
 - Quick actions do not upload files and do not write optimized outputs by themselves.
 - **Process Included** remains the only action that writes optimized output files.
 
